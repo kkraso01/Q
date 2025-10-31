@@ -2,10 +2,106 @@
 
 ## Project Overview
 
-This is a research project exploring quantum data structures, focusing on achieving preliminary results in 4–6 weeks. The primary goal is to develop quantum alternatives to classical probabilistic data structures (Bloom filters, SimHash, suffix arrays) with demonstrable trade-offs in accuracy, memory, and query performance.
+This is a research project exploring quantum data structures with a 14-phase roadmap from preliminary results to field-founding contributions. The project develops quantum alternatives to classical probabilistic data structures (Bloom filters, SimHash, suffix arrays) with demonstrable trade-offs in accuracy, memory, and query performance.
 
+**Current Status: Phase 2 Complete → Phase 3 Ready to Start**
 
+---
 
+## 📍 CURRENT STATUS SUMMARY
+
+### ✅ Completed (Phase 1-2):
+- QAM, Q-SubSketch, Q-SimHash core implementations
+- Classical baselines (Bloom, Cuckoo, XOR, Vacuum filters)
+- Comprehensive experiment harness (sweeps, batch queries, topology variants)
+- Theory documentation (bounds, deletion limitations, cell probe model)
+- All code infrastructure ready
+
+### 🟡 In Progress (Phase 2 Finalization):
+- **IMMEDIATE NEXT**: Run `experiments/generate_all_figures.py` to generate 8+ plots
+- Verify figure reproducibility
+- Update paper with all Phase 2 results
+
+### 🔴 Not Started (Phase 3+):
+- Quantum Hashed Trie (QHT)
+- Quantum Count-Distinct (Q-Count)
+- Quantum Heavy Hitters (Q-HH)
+- Formal lower bounds generalization
+- Q-LSH, Q-KV (Phase 4)
+- Full retrieval stack (Phase 6)
+
+---
+
+## 📋 COMPLETE PHASE ROADMAP
+
+### Phase 1: Foundation ✅ DONE
+- Repository scaffold, QAM prototype, basic experiments, early bounds, paper skeleton
+
+### Phase 2: Strengthening ✅ 95% DONE
+- Classical baselines (Cuckoo/XOR/Vacuum) ✅
+- Deletion strategy via inverse rotation ✅
+- Batch query experiments ✅
+- Noise/topology analysis ✅
+- **PENDING**: Generate all figures, update paper
+
+### Phase 3: Novel QDS + Lower Bounds (6-10 weeks)
+1. Quantum Hashed Trie (QHT) for prefix membership
+2. Quantum Count-Distinct (Q-Count) for streaming cardinality
+3. Quantum Heavy Hitters (Q-HH) for top-k frequency
+4. Formalize lower bound: m ≥ Ω(log(1/α)/(1-ε))
+
+### Phase 4: Generalized Theory + LSH + KV-Cache (6-10 weeks)
+1. Generalized lower bounds (batch advantage, multi-query)
+2. Quantum LSH (Q-LSH) for similarity search
+3. Quantum KV-cache eviction policy
+4. Benchmark suite infrastructure
+
+### Phase 5: Foundational Generalization (8+ weeks)
+- Unify all primitives under "Amplitude Sketching" framework
+- Hardness results and separation theorems
+- Composability theory for chained structures
+
+### Phase 6: Full Retrieval System (6-10 weeks)
+- Integrate Q-SubSketch → Q-LSH → Q-HH → Q-KV pipeline
+- Compare vs FAISS/HNSW/IVF-PQ
+- 10+ performance plots (recall, latency, memory, throughput)
+
+### Phase 7: Hybrid Compiler Optimizations (6-10 weeks)
+- Amplitude fusion compiler pass
+- Noise-aware scheduling
+- Ancilla recycling optimization
+
+### Phase 8: Hardware-Aware Models (6-10 weeks)
+- Heavy-hex, ion-trap, superconducting topologies
+- Routing penalty models
+- Realistic transpilation analysis
+
+### Phase 9: Benchmark Suite (QDBench) (6-10 weeks)
+- Standard benchmark suite for QDS community
+- Canonical metrics and reproducibility infrastructure
+
+### Phase 10: Amplitude Sketching DSL (8+ weeks)
+- Domain-specific language for quantum sketches
+- Type system for amplitude accumulation
+- Formal semantics and safety
+
+### Phase 11: Meta-Theorems (8+ weeks)
+- Fundamental separation results
+- Lower bounds comparable to Pătraşcu & Demaine work
+
+### Phase 12: Industry Translation (4-8 weeks)
+- Package Q-Retrieval and Q-KV for production
+- Target RAG vendors, LLM infra, database systems
+
+### Phase 13: Manifesto Paper (6-8 weeks)
+- "Amplitude Sketching: A Unified Framework for QDS"
+- Citation magnet covering all constructions
+
+### Phase 14: Survey/Book (6+ months)
+- Comprehensive survey establishing field vocabulary
+- Tutorial and textbook-style treatment
+
+---
 
 ## Phase 5–End: Engineering, Scaling, and Finalization ✓
 
@@ -174,7 +270,119 @@ qam_insert(qc, b"test_item", hash_functions, m, theta)
 - All required figures are generated and reproducible.
 - All code, figures, and paper sections are updated and ready for submission.
 
-## When done, report: "Phase 5–End complete. What next?"
+---
+
+## 🎯 IMMEDIATE ACTION PLAN (Next 2 Weeks)
+
+### Week 1: Complete Phase 2
+**Priority 1: Generate Figures**
+```powershell
+# Activate environment
+.\venv\Scripts\Activate.ps1
+
+# Run comprehensive figure generation
+python experiments/generate_all_figures.py
+
+# Verify output in results/ directory
+ls results/*.png
+```
+
+**Expected outputs:**
+1. accuracy_vs_memory.png
+2. accuracy_vs_shots.png
+3. accuracy_vs_noise.png
+4. accuracy_vs_load_factor.png
+5. batch_query_error_vs_amortized_cost.png
+6. heatmap_shots_noise.png
+7. topology_comparison.png
+8. q_subsketch_auc.png
+
+**Priority 2: Paper Update**
+- Review `paper/draft.md`
+- Add all 8 figures with captions
+- Update experimental results section
+- Document classical baseline comparisons
+- Add deletion strategy results
+- Include batch advantage analysis
+
+**Priority 3: Reproducibility Check**
+- Re-run `generate_all_figures.py` with clean environment
+- Verify deterministic outputs
+- Document any missing dependencies
+
+### Week 2: Begin Phase 3
+**Quantum Hashed Trie (QHT)**
+1. Create `sim/qht.py` with insert/query operations
+2. Implement phase rotations for character prefixes
+3. Add `sim/test_qht.py` with unit tests
+4. Create `notebooks/qht.ipynb` for exploration
+5. Sweep branching factors b ∈ {2, 4, 8, 16}
+6. Sweep depths L ∈ {4, 8, 16, 32}
+7. Generate ROC curves
+
+**Quantum Count-Distinct (Q-Count)**
+1. Create `sim/q_count.py` with cardinality estimator
+2. Implement bucket hashing and phase encoding
+3. Add `sim/test_q_count.py`
+4. Create `notebooks/q_count.ipynb`
+5. Compare to HyperLogLog baseline
+6. Plot: error vs load factor, buckets vs error, shots vs error
+
+---
+
+## 📊 SUCCESS METRICS BY PHASE
+
+### Phase 2 Complete When:
+- [ ] All 8+ figures generated and in `results/`
+- [ ] Paper updated with experimental results
+- [ ] Reproducibility verified (clean run succeeds)
+- [ ] All tests passing: `pytest sim/ -v`
+
+### Phase 3 Complete When:
+- [ ] QHT, Q-Count, Q-HH implemented with tests
+- [ ] Lower bound theorem documented in `theory/general_bounds.md`
+- [ ] 12-18 high-quality figures total
+- [ ] Hardware-aware topology results included
+- [ ] Paper at 15-20 pages with all three new structures
+
+### Phase 4 Complete When:
+- [ ] Q-LSH achieves ≥ classical LSH recall@k at similar memory
+- [ ] Q-KV shows ≥1-2% PPL reduction OR ≥5-10% hit-rate gain
+- [ ] `benchmarks/run_all.py` reproduces all figures end-to-end
+- [ ] General bounds theorems proven and documented
+
+---
+
+## 🚨 CRITICAL DEPENDENCIES
+
+**Before starting any Phase 3+ work:**
+1. ✅ Python 3.11 environment active
+2. ✅ Qiskit ≥1.0 installed
+3. ✅ All Phase 2 tests passing
+4. ✅ Figures generated successfully
+5. ✅ Paper draft up-to-date
+
+**For Phase 4 (Q-LSH/Q-KV):**
+- Install: `pip install faiss-cpu scikit-learn transformers torch`
+- Download: SIFT1M subset, GloVe embeddings
+- Prepare: WikiText-103 or The Pile subset
+
+---
+
+## 📚 KEY REFERENCE DOCS
+
+- **Roadmap**: `roadmap.md` (original 6-week plan)
+- **Phase 2**: `roadmap_phase2.md` (strengthening)
+- **Phase 3**: `roadmap_phase3.md` (novel QDS)
+- **Phase 4**: `roadmap_phase4.md` (generalized theory + LSH)
+- **Phase 5**: `roadmap_phase5.md` (foundational generalization)
+- **Phase 6**: `roadmap_phase6.md` (retrieval system)
+- **Phases 7-14**: `roadmap_phase7.md` through `roadmap_phase14.md` (placeholders)
+
+---
+
+## When Phase 2 complete, report: "Phase 2 finalized. Ready for Phase 3."
+## When Phase 3 complete, report: "Phase 3 complete. Ready for Phase 4."
 
 ## Theoretical Deliverables
 
