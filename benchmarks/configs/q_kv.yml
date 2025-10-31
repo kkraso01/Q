@@ -1,0 +1,43 @@
+# Q-KV Benchmark Configuration
+# Parameters for Quantum KV-Cache eviction policy experiments
+
+# Cache sizes
+cache_sizes: [10, 20, 50, 100, 200]
+
+# Memory sizes for quantum sketch
+sketch_memory_sizes: [16, 32, 64]
+
+# Hash functions for sketch
+hash_functions: [2, 3, 4]
+
+# Workload parameters
+workload:
+  n_keys: [50, 100, 200]
+  n_accesses: [500, 1000, 2000]
+  zipf_params: [1.0, 1.5, 2.0, 2.5]  # Skewness of key popularity
+
+# Shot counts for importance estimation
+shots: [256, 512]
+
+# Noise levels
+noise_levels: [0.0, 0.001]
+
+# Trials
+n_trials: 10
+
+# Seed
+seed: 42
+
+# Comparison baselines
+baselines:
+  - lru
+  - lfu
+  - arc  # Adaptive Replacement Cache
+  - lirs  # Low Inter-reference Recency Set
+
+# LLM-specific evaluation (if available)
+llm_eval:
+  enabled: false
+  model: "gpt2"
+  dataset: "wikitext-103"
+  max_context: 1024

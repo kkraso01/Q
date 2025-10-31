@@ -1,0 +1,35 @@
+# QHT Benchmark Configuration
+# Parameters for Quantum Hashed Trie experiments
+
+# Memory sizes (number of qubits)
+memory_sizes: [32, 64, 128, 256]
+
+# Hash functions per depth level
+hash_functions: [2, 3, 4]
+
+# Branching factors
+branching_factors: [2, 4, 8, 16]
+
+# Maximum trie depths
+max_depths: [4, 8, 16, 32]
+
+# Prefix lengths for testing
+prefix_lengths: [2, 4, 8, 16]
+
+# Shot counts
+shots: [256, 512, 1024]
+
+# Noise levels
+noise_levels: [0.0, 0.001, 0.005]
+
+# Number of strings to insert
+n_strings: [50, 100, 200]
+
+# String length (for synthetic data)
+string_length: 32
+
+# Trials
+n_trials: 10
+
+# Seed
+seed: 42

@@ -1,0 +1,32 @@
+# QAM Benchmark Configuration
+# Parameters for Quantum Approximate Membership experiments
+
+# Memory sizes (number of qubits)
+memory_sizes: [16, 32, 64, 128]
+
+# Hash functions
+hash_functions: [2, 3, 4, 5]
+
+# Set sizes
+set_sizes: [32, 64, 128, 256]
+
+# Shot counts for measurement
+shots: [128, 256, 512, 1024, 2048]
+
+# Noise levels (depolarizing error per 2Q gate)
+noise_levels: [0.0, 0.0001, 0.0005, 0.001, 0.005, 0.01]
+
+# Load factors (ρ = |S| / m)
+load_factors: [0.25, 0.5, 0.75, 1.0]
+
+# Batch sizes for batch query experiments
+batch_sizes: [1, 4, 16, 64]
+
+# Topology variants
+topologies: ['none', 'linear', 'ring', 'all-to-all']
+
+# Number of trials for confidence intervals
+n_trials: 10
+
+# Random seed for reproducibility
+seed: 42

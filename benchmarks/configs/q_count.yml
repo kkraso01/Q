@@ -1,0 +1,34 @@
+# Q-Count Benchmark Configuration
+# Parameters for Quantum Count-Distinct experiments
+
+# Memory sizes (number of qubits)
+memory_sizes: [32, 64, 128, 256]
+
+# Hash functions
+hash_functions: [2, 3, 4]
+
+# Number of buckets
+n_buckets: [4, 8, 16, 32]
+
+# True cardinalities to estimate
+true_cardinalities: [50, 100, 200, 500, 1000]
+
+# Shot counts
+shots: [512, 1024, 2048]
+
+# Noise levels
+noise_levels: [0.0, 0.001, 0.005]
+
+# Load factors
+load_factors: [0.5, 1.0, 2.0]
+
+# Number of trials
+n_trials: 10
+
+# Seed
+seed: 42
+
+# Comparison baselines
+baselines:
+  - hyperloglog
+  - linear_counting
