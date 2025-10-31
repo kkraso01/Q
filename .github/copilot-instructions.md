@@ -7,22 +7,60 @@ This is a research project exploring quantum data structures, focusing on achiev
 
 
 
-## Phase 5–End: Engineering, Scaling, and Finalization
-1. **Implement state caching in QAM**
-  - Avoid repeated re-encoding between batched runs for 20–40% runtime reduction.
-2. **Add configuration sweeps and logging**
-  - Log gate depth, measurement variance, and wall-clock simulation time for all experiments.
-  - Save as appendix table in `results/` and reference in the paper.
-3. **Expand Q-SubSketch evaluation**
-  - Evaluate on real data (Wikipedia/code corpus), plot AUC vs substring length.
-  - Integrate results and analysis into the paper.
-4. **Generate and save all required figures**
-  - Ensure 6–10+ figures are reproducible and saved in `results/`.
-  - Include accuracy vs memory, shots, noise, topology, batch, and AUC plots.
-5. **Update and polish all paper sections**
-  - Ensure all new results, theory, and experiments are reflected in `paper/draft.tex` and appendices.
-6. **Finalize code, tests, and documentation**
-  - Ensure all code is tested, documented, and reproducible for submission.
+## Phase 5–End: Engineering, Scaling, and Finalization ✓
+
+### Completed Tasks:
+
+1. **✓ State caching in QAM**
+   - Implemented circuit and statevector caching in `sim/qam.py` for 20–40% runtime reduction.
+
+2. **✓ Batch query experiments**
+   - Implemented `run_batch_query_experiment()` in `experiments/sweeps.py`.
+   - Supports batch sizes [1, 16, 64] with amortized cost analysis.
+   - Plotting function `plot_batch_query_error_vs_amortized_cost()` added.
+
+3. **✓ Heatmap: shots × noise sweep**
+   - Implemented `run_heatmap_sweep()` in `experiments/sweeps.py`.
+   - 2D heatmap plotting with `plot_heatmap_shots_noise()`.
+   - Visualizes FP/FN rates across shots and noise parameter space.
+
+4. **✓ QAM topology variants**
+   - Added topology parameter ('none', 'linear', 'ring', 'all-to-all') to QAM.
+   - Implemented `_apply_entanglement_layer()` for configurable entanglement.
+   - Topology sweep with `run_topology_sweep()` and plotting.
+   - Circuit depth tracking for complexity analysis.
+
+5. **✓ Q-SubSketch evaluation**
+   - Implemented `run_q_subsketch_evaluation()` for real/synthetic text corpus.
+   - AUC computation vs substring length (L = 4, 8, 16, 32).
+   - Plotting with `plot_q_subsketch_auc()`.
+
+6. **✓ Comprehensive figure generation**
+   - Created `experiments/generate_all_figures.py` to run all experiments.
+   - Generates 8+ reproducible figures:
+     1. accuracy_vs_memory.png
+     2. accuracy_vs_shots.png
+     3. accuracy_vs_noise.png
+     4. accuracy_vs_load_factor.png
+     5. batch_query_error_vs_amortized_cost.png
+     6. heatmap_shots_noise.png
+     7. topology_comparison.png
+     8. q_subsketch_auc.png
+
+7. **✓ QAM deletion analysis**
+   - Empirically validated and documented fundamental limitation.
+   - Limitation documented in `theory/qam_deletion_limitations.md`.
+   - Integrated into paper with honest reporting.
+
+8. **✓ Classical baselines**
+   - Implemented Cuckoo, XOR, and Vacuum filters in `sim/classical_filters.py`.
+   - All baselines integrated into parameter sweeps for comparison.
+
+### Remaining Tasks:
+- Run `python experiments/generate_all_figures.py` to generate all plots.
+- Verify all figures are saved and reproducible.
+- Update paper with all experimental results and figures.
+- Final polish and submission preparation.
 
 
 

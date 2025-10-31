@@ -106,6 +106,9 @@ def run_batch_query_experiment(m, k, set_size, shots, batch_sizes=[1, 16, 64], n
             writer.writerows(results)
         print(f"Batch query results saved to {output_file}")
     return output_file
+
+
+def run_single_experiment(m, k, set_size, shots, noise_rate, theta=np.pi/4, n_trials=10):
     """
     Run single parameter configuration experiment.
     
@@ -221,6 +224,241 @@ def run_batch_query_experiment(m, k, set_size, shots, batch_sizes=[1, 16, 64], n
     }
 
 
+def run_heatmap_sweep(m=32, k=3, set_size=64, shot_values=[128, 256, 512, 1024], noise_values=[0.0, 0.001, 0.005, 0.01, 0.02], theta=np.pi/4, n_trials=10, output_dir='results'):
+    """
+    Run shots × noise heatmap sweep for QAM.
+    Sweeps over shots and noise, records error rates, saves as CSV.
+    """
+    np.random.seed(42)
+    from sim.qam import QAM, create_noise_model
+    Path(output_dir).mkdir(exist_ok=True)
+    all_items = generate_random_items(set_size * 3, length=8)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    output_file = Path(output_dir) / f'qam_heatmap_{timestamp}.csv'
+    results = []
+    total = len(shot_values) * len(noise_values)
+    count = 0
+    print(f"Running {total} heatmap experiments...")
+    for shots in shot_values:
+        for noise in noise_values:
+            count += 1
+            print(f"[{count}/{total}] shots={shots}, ε={noise}")
+            fp_rates = []
+            fn_rates = []
+            for trial in range(n_trials):
+                trial_seed = 42 + trial
+                np.random.seed(trial_seed)
+                inserted = all_items[:set_size]
+                test_positive = all_items[set_size:set_size + 10]
+                test_negative = all_items[set_size + 10:set_size + 20]
+                qam = QAM(m=m, k=k, theta=theta)
+                noise_model = create_noise_model(noise) if noise > 0 else None
+                # Compute FP
+                fps = 0
+                for item in test_negative:
+                    exp = qam.query(inserted, item, shots=shots, noise_model=noise_model)
+                    if exp >= 0.5:
+                        fps += 1
+                fp_rate = fps / len(test_negative)
+                # Compute FN
+                fns = 0
+                for item in test_positive:
+                    exp = qam.query(inserted, item, shots=shots, noise_model=noise_model)
+                    if exp < 0.5:
+                        fns += 1
+                fn_rate = fns / len(test_positive)
+                fp_rates.append(fp_rate)
+                fn_rates.append(fn_rate)
+            results.append({
+                'm': m,
+                'k': k,
+                'set_size': set_size,
+                'shots': shots,
+                'noise': noise,
+                'fp_mean': np.mean(fp_rates),
+                'fp_std': np.std(fp_rates),
+                'fn_mean': np.mean(fn_rates),
+                'fn_std': np.std(fn_rates)
+            })
+    # Save results
+    if results:
+        with open(output_file, 'w', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=results[0].keys())
+            writer.writeheader()
+            writer.writerows(results)
+        print(f"Heatmap results saved to {output_file}")
+    return output_file
+
+
+def run_q_subsketch_evaluation(text_file=None, m=32, k=3, L_values=[4, 8, 16, 32], shots=512, n_trials=5, output_dir='results'):
+    """
+    Evaluate Q-SubSketch on real text corpus.
+    If no text_file provided, generates synthetic text.
+    Computes AUC vs substring length and saves results.
+    """
+    np.random.seed(42)
+    from sim.q_subsketch import QSubSketch
+    from sklearn.metrics import roc_auc_score
+    Path(output_dir).mkdir(exist_ok=True)
+    
+    # Load or generate text
+    if text_file and Path(text_file).exists():
+        with open(text_file, 'r', encoding='utf-8', errors='ignore') as f:
+            corpus = f.read().encode('utf-8')
+        print(f"Loaded text corpus: {len(corpus)} bytes")
+    else:
+        # Generate synthetic text (code-like corpus)
+        print("Generating synthetic code-like corpus...")
+        corpus = b"def main():\n    for i in range(100):\n        print(i)\n" * 100
+    
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    output_file = Path(output_dir) / f'q_subsketch_{timestamp}.csv'
+    results = []
+    total = len(L_values)
+    count = 0
+    print(f"Running {total} Q-SubSketch experiments...")
+    
+    for L in L_values:
+        count += 1
+        print(f"[{count}/{total}] L={L}")
+        auc_scores = []
+        for trial in range(n_trials):
+            trial_seed = 42 + trial
+            np.random.seed(trial_seed)
+            # Extract a chunk of text
+            chunk_start = np.random.randint(0, max(1, len(corpus) - 1000))
+            chunk_end = min(chunk_start + 1000, len(corpus))
+            text_chunk = corpus[chunk_start:chunk_end]
+            
+            # Ensure chunk is long enough
+            if len(text_chunk) < L + 50:
+                continue
+            
+            # Sample positive (in text) and negative (not in text) substrings
+            n_test = 20
+            positive_patterns = []
+            for _ in range(n_test // 2):
+                start = np.random.randint(0, len(text_chunk) - L)
+                positive_patterns.append(text_chunk[start:start+L])
+            
+            negative_patterns = []
+            for _ in range(n_test // 2):
+                # Random bytes not in text
+                neg = bytes(np.random.randint(0, 256, L))
+                negative_patterns.append(neg)
+            
+            # Query with Q-SubSketch
+            qss = QSubSketch(m=m, k=k, L=L, stride=1)
+            y_true = [1] * len(positive_patterns) + [0] * len(negative_patterns)
+            y_scores = []
+            for pat in positive_patterns:
+                exp = qss.query(text_chunk, pat, shots=shots)
+                y_scores.append(exp)
+            for pat in negative_patterns:
+                exp = qss.query(text_chunk, pat, shots=shots)
+                y_scores.append(exp)
+            
+            # Compute AUC
+            try:
+                auc = roc_auc_score(y_true, y_scores)
+                auc_scores.append(auc)
+            except:
+                pass
+        
+        if auc_scores:
+            results.append({
+                'm': m,
+                'k': k,
+                'L': L,
+                'shots': shots,
+                'auc_mean': np.mean(auc_scores),
+                'auc_std': np.std(auc_scores)
+            })
+    
+    # Save results
+    if results:
+        with open(output_file, 'w', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=results[0].keys())
+            writer.writeheader()
+            writer.writerows(results)
+        print(f"Q-SubSketch results saved to {output_file}")
+    return output_file
+
+
+def run_topology_sweep(m=32, k=3, set_size=64, shots=512, topologies=['none', 'linear', 'ring', 'all-to-all'], noise_rate=0.0, theta=np.pi/4, n_trials=10, output_dir='results'):
+    """
+    Run topology sweep for QAM.
+    Compare different entanglement topologies: none, linear, ring, all-to-all.
+    Records error rates and circuit depth for each topology.
+    """
+    np.random.seed(42)
+    from sim.qam import QAM, create_noise_model
+    Path(output_dir).mkdir(exist_ok=True)
+    all_items = generate_random_items(set_size * 3, length=8)
+    noise_model = create_noise_model(noise_rate) if noise_rate > 0 else None
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    output_file = Path(output_dir) / f'qam_topology_{timestamp}.csv'
+    results = []
+    total = len(topologies)
+    count = 0
+    print(f"Running {total} topology experiments...")
+    for topo in topologies:
+        count += 1
+        print(f"[{count}/{total}] topology={topo}")
+        fp_rates = []
+        fn_rates = []
+        depths = []
+        for trial in range(n_trials):
+            trial_seed = 42 + trial
+            np.random.seed(trial_seed)
+            inserted = all_items[:set_size]
+            test_positive = all_items[set_size:set_size + 10]
+            test_negative = all_items[set_size + 10:set_size + 20]
+            qam = QAM(m=m, k=k, theta=theta, topology=topo)
+            # Compute circuit depth
+            qc = qam.build_insert_circuit(inserted)
+            depth = qc.depth()
+            depths.append(depth)
+            # Compute FP
+            fps = 0
+            for item in test_negative:
+                exp = qam.query(inserted, item, shots=shots, noise_model=noise_model)
+                if exp >= 0.5:
+                    fps += 1
+            fp_rate = fps / len(test_negative)
+            # Compute FN
+            fns = 0
+            for item in test_positive:
+                exp = qam.query(inserted, item, shots=shots, noise_model=noise_model)
+                if exp < 0.5:
+                    fns += 1
+            fn_rate = fns / len(test_positive)
+            fp_rates.append(fp_rate)
+            fn_rates.append(fn_rate)
+        results.append({
+            'm': m,
+            'k': k,
+            'set_size': set_size,
+            'shots': shots,
+            'noise': noise_rate,
+            'topology': topo,
+            'fp_mean': np.mean(fp_rates),
+            'fp_std': np.std(fp_rates),
+            'fn_mean': np.mean(fn_rates),
+            'fn_std': np.std(fn_rates),
+            'depth_mean': np.mean(depths),
+            'depth_std': np.std(depths)
+        })
+    # Save results
+    if results:
+        with open(output_file, 'w', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=results[0].keys())
+            writer.writeheader()
+            writer.writerows(results)
+        print(f"Topology results saved to {output_file}")
+    return output_file
+
+
 def run_parameter_sweep(output_dir='results'):
     """Run full parameter grid search."""
     Path(output_dir).mkdir(exist_ok=True)
@@ -284,10 +522,20 @@ def main():
     parser.add_argument('--sweep', action='store_true', help='Run full parameter sweep')
     parser.add_argument('--output-dir', type=str, default='results', help='Output directory')
     parser.add_argument('--batch', action='store_true', help='Run batch query experiment')
+    parser.add_argument('--heatmap', action='store_true', help='Run shots × noise heatmap sweep')
+    parser.add_argument('--topology', action='store_true', help='Run topology comparison sweep')
+    parser.add_argument('--q-subsketch', action='store_true', help='Run Q-SubSketch evaluation')
+    parser.add_argument('--text-file', type=str, default=None, help='Text file for Q-SubSketch evaluation')
     
     args = parser.parse_args()
     
-    if args.batch:
+    if args.q_subsketch:
+        run_q_subsketch_evaluation(text_file=args.text_file, m=args.m, k=args.k, shots=args.shots, output_dir=args.output_dir)
+    elif args.topology:
+        run_topology_sweep(args.m, args.k, args.set_size, args.shots, output_dir=args.output_dir)
+    elif args.heatmap:
+        run_heatmap_sweep(args.m, args.k, args.set_size, output_dir=args.output_dir)
+    elif args.batch:
         run_batch_query_experiment(args.m, args.k, args.set_size, args.shots, batch_sizes=[1, 16, 64], noise_rate=args.noise, output_dir=args.output_dir)
     elif args.sweep:
         run_parameter_sweep(args.output_dir)

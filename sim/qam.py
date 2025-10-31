@@ -25,7 +25,7 @@ class QAM:
 
     """Quantum Approximate Membership data structure."""
     
-    def __init__(self, m, k, theta=np.pi/4):
+    def __init__(self, m, k, theta=np.pi/4, topology='none'):
         """
         Initialize QAM.
         
@@ -33,10 +33,12 @@ class QAM:
             m: Number of qubits (memory size)
             k: Number of hash functions
             theta: Phase rotation angle (default π/4)
+            topology: Entanglement topology ('none', 'linear', 'ring', 'all-to-all')
         """
         self.m = m
         self.k = k
         self.theta = theta
+        self.topology = topology
         self.hash_functions = make_hash_functions(k)
         self.inserted_items = []
         
@@ -44,6 +46,24 @@ class QAM:
         """Get k qubit indices for item x."""
         x_int = bitstring_to_int(x)
         return [h(x_int) % self.m for h in self.hash_functions]
+    
+    def _apply_entanglement_layer(self, qc):
+        """Apply entanglement layer based on topology."""
+        if self.topology == 'linear':
+            # Linear chain: CZ between adjacent qubits
+            for i in range(self.m - 1):
+                qc.cz(i, i + 1)
+        elif self.topology == 'ring':
+            # Ring: linear + wrap around
+            for i in range(self.m - 1):
+                qc.cz(i, i + 1)
+            qc.cz(self.m - 1, 0)  # Wrap around
+        elif self.topology == 'all-to-all':
+            # All-to-all: CZ between all pairs
+            for i in range(self.m):
+                for j in range(i + 1, self.m):
+                    qc.cz(i, j)
+        # 'none': no entanglement
     
     def build_insert_circuit(self, items, deleted_items=None):
         """
@@ -65,6 +85,8 @@ class QAM:
         qc = QuantumCircuit(self.m)
         # Initialize to |+⟩^⊗m for superposition
         qc.h(range(self.m))
+        # Apply entanglement layer (if topology specified)
+        self._apply_entanglement_layer(qc)
         # Insert each item by applying phase rotations
         for item in items:
             indices = self._get_indices(item)

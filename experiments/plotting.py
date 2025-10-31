@@ -157,15 +157,127 @@ def plot_load_factor_analysis(df, output_dir='results'):
     plt.close()
 
 
+def plot_heatmap_shots_noise(df, output_dir='results'):
+    """Plot 2D heatmap of error vs shots × noise."""
+    Path(output_dir).mkdir(exist_ok=True)
+    
+    # Create pivot tables for FP and FN
+    fp_pivot = df.pivot_table(values='fp_mean', index='noise', columns='shots', aggfunc='mean')
+    fn_pivot = df.pivot_table(values='fn_mean', index='noise', columns='shots', aggfunc='mean')
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    
+    # FP heatmap
+    im1 = ax1.imshow(fp_pivot.values, cmap='YlOrRd', aspect='auto', interpolation='nearest')
+    ax1.set_xticks(range(len(fp_pivot.columns)))
+    ax1.set_xticklabels(fp_pivot.columns)
+    ax1.set_yticks(range(len(fp_pivot.index)))
+    ax1.set_yticklabels([f'{x:.3f}' for x in fp_pivot.index])
+    ax1.set_xlabel('Shots', fontsize=12)
+    ax1.set_ylabel('Noise Rate (ε)', fontsize=12)
+    ax1.set_title('False Positive Rate: Shots × Noise', fontsize=14, fontweight='bold')
+    cbar1 = plt.colorbar(im1, ax=ax1)
+    cbar1.set_label('FP Rate', fontsize=11)
+    
+    # FN heatmap
+    im2 = ax2.imshow(fn_pivot.values, cmap='YlGnBu', aspect='auto', interpolation='nearest')
+    ax2.set_xticks(range(len(fn_pivot.columns)))
+    ax2.set_xticklabels(fn_pivot.columns)
+    ax2.set_yticks(range(len(fn_pivot.index)))
+    ax2.set_yticklabels([f'{x:.3f}' for x in fn_pivot.index])
+    ax2.set_xlabel('Shots', fontsize=12)
+    ax2.set_ylabel('Noise Rate (ε)', fontsize=12)
+    ax2.set_title('False Negative Rate: Shots × Noise', fontsize=14, fontweight='bold')
+    cbar2 = plt.colorbar(im2, ax=ax2)
+    cbar2.set_label('FN Rate', fontsize=11)
+    
+    plt.tight_layout()
+    output_file = Path(output_dir) / 'heatmap_shots_noise.png'
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    print(f"Saved: {output_file}")
+    plt.close()
+
+
+def plot_topology_comparison(df, output_dir='results'):
+    """Plot FP rate and circuit depth vs topology."""
+    Path(output_dir).mkdir(exist_ok=True)
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    
+    topologies = df['topology'].unique()
+    
+    # FP rate vs topology
+    fp_means = [df[df['topology'] == t]['fp_mean'].mean() for t in topologies]
+    fp_stds = [df[df['topology'] == t]['fp_std'].mean() for t in topologies]
+    
+    ax1.bar(topologies, fp_means, yerr=fp_stds, capsize=5, color=['#2E86AB', '#A23B72', '#F18F01', '#C73E1D'])
+    ax1.set_xlabel('Topology', fontsize=12)
+    ax1.set_ylabel('False Positive Rate', fontsize=12)
+    ax1.set_title('Accuracy vs Topology', fontsize=14, fontweight='bold')
+    ax1.grid(True, alpha=0.3, axis='y')
+    
+    # Circuit depth vs topology
+    depth_means = [df[df['topology'] == t]['depth_mean'].mean() for t in topologies]
+    depth_stds = [df[df['topology'] == t]['depth_std'].mean() for t in topologies]
+    
+    ax2.bar(topologies, depth_means, yerr=depth_stds, capsize=5, color=['#2E86AB', '#A23B72', '#F18F01', '#C73E1D'])
+    ax2.set_xlabel('Topology', fontsize=12)
+    ax2.set_ylabel('Circuit Depth', fontsize=12)
+    ax2.set_title('Circuit Depth vs Topology', fontsize=14, fontweight='bold')
+    ax2.grid(True, alpha=0.3, axis='y')
+    
+    plt.tight_layout()
+    output_file = Path(output_dir) / 'topology_comparison.png'
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    print(f"Saved: {output_file}")
+    plt.close()
+
+
+def plot_q_subsketch_auc(df, output_dir='results'):
+    """Plot AUC vs substring length for Q-SubSketch."""
+    Path(output_dir).mkdir(exist_ok=True)
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    L_vals = sorted(df['L'].unique())
+    auc_means = [df[df['L'] == L]['auc_mean'].mean() for L in L_vals]
+    auc_stds = [df[df['L'] == L]['auc_std'].mean() for L in L_vals]
+    
+    ax.errorbar(L_vals, auc_means, yerr=auc_stds, marker='o', capsize=5, linewidth=2, color='#2E86AB')
+    ax.axhline(y=0.5, color='gray', linestyle='--', label='Random baseline (AUC=0.5)')
+    ax.set_xlabel('Substring Length (L)', fontsize=12)
+    ax.set_ylabel('AUC Score', fontsize=12)
+    ax.set_title('Q-SubSketch: AUC vs Substring Length', fontsize=14, fontweight='bold')
+    ax.legend(fontsize=11)
+    ax.grid(True, alpha=0.3)
+    ax.set_ylim([0, 1.05])
+    
+    output_file = Path(output_dir) / 'q_subsketch_auc.png'
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    print(f"Saved: {output_file}")
+    plt.close()
+
+
 def plot_all(csv_file, output_dir='results'):
     """Generate all plots from CSV results."""
     df = pd.read_csv(csv_file)
     print(f"Loaded {len(df)} results from {csv_file}")
     print("\nGenerating plots...")
-    # Detect if this is a batch query CSV (has 'batch_size' column)
+    # Detect CSV type and generate appropriate plots
     if 'batch_size' in df.columns and 'amortized_shots' in df.columns:
+        # Batch query CSV
         plot_batch_query_error_vs_amortized_cost(df, output_dir)
+    elif 'topology' in df.columns and 'depth_mean' in df.columns:
+        # Topology CSV
+        plot_topology_comparison(df, output_dir)
+    elif 'auc_mean' in df.columns and 'L' in df.columns:
+        # Q-SubSketch CSV
+        plot_q_subsketch_auc(df, output_dir)
+    elif 'fp_mean' in df.columns and 'fn_mean' in df.columns and 'shots' in df.columns and 'noise' in df.columns and len(df['shots'].unique()) > 1 and len(df['noise'].unique()) > 1:
+        # Heatmap CSV
+        plot_heatmap_shots_noise(df, output_dir)
     else:
+        # Standard sweep CSV
         plot_accuracy_vs_memory(df, output_dir)
         plot_accuracy_vs_shots(df, output_dir)
         plot_accuracy_vs_noise(df, output_dir)
