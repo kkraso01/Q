@@ -35,7 +35,7 @@ class QAM:
         x_int = bitstring_to_int(x)
         return [h(x_int) % self.m for h in self.hash_functions]
     
-    def build_insert_circuit(self, items):
+    def build_insert_circuit(self, items, deleted_items=None):
         """
         Build circuit with all insertions.
         
@@ -55,36 +55,39 @@ class QAM:
             indices = self._get_indices(item)
             for idx in indices:
                 qc.rz(self.theta, idx)
-        
+
+        # Apply inverse phase for deleted items
+        if deleted_items:
+            for item in deleted_items:
+                indices = self._get_indices(item)
+                for idx in indices:
+                    qc.rz(-self.theta, idx)
+
         return qc
     
-    def build_query_circuit(self, items, query_item):
+    def build_query_circuit(self, items, query_item, deleted_items=None):
         """
         Build circuit to query membership.
         
         Args:
             items: List of inserted items
             query_item: Item to query
-            
+            deleted_items: List of deleted items (optional)
         Returns:
             QuantumCircuit for query
         """
-        qc = self.build_insert_circuit(items)
-        
+        qc = self.build_insert_circuit(items, deleted_items=deleted_items)
         # Apply inverse rotations for query item
         query_indices = self._get_indices(query_item)
         for idx in query_indices:
             qc.rz(-self.theta, idx)
-        
         # Hadamard before measurement
         qc.h(range(self.m))
-        
         # Measure all qubits
         qc.measure_all()
-        
         return qc
     
-    def query(self, items, query_item, shots=512, noise_model=None):
+    def query(self, items, query_item, shots=512, noise_model=None, deleted_items=None):
         """
         Query if item is in set.
         
@@ -93,43 +96,44 @@ class QAM:
             query_item: Item to query
             shots: Number of measurement shots
             noise_model: Optional Qiskit noise model
-            
+            deleted_items: List of deleted items (optional)
         Returns:
             Expectation value (higher = more likely member)
         """
-        qc = self.build_query_circuit(items, query_item)
-        
+        qc = self.build_query_circuit(items, query_item, deleted_items=deleted_items)
         # Run simulation with automatic method selection
         simulator = AerSimulator(method='automatic', noise_model=noise_model) if noise_model else AerSimulator(method='automatic')
         job = simulator.run(qc, shots=shots)
         result = job.result()
         counts = result.get_counts()
-        
         # Calculate expectation: count |0...0⟩ occurrences
         zero_bitstring = '0' * self.m
         all_zero_count = counts.get(zero_bitstring, 0)
         expectation = all_zero_count / shots
-        
         return expectation
     
-    def query_statevector(self, items, query_item):
+    def query_statevector(self, items, query_item, deleted_items=None):
         """
         Query using statevector (no noise, exact).
         
         Args:
             items: List of inserted items
             query_item: Item to query
-            
+            deleted_items: List of deleted items (optional)
         Returns:
             Probability of measuring |0...0⟩
         """
-        qc = self.build_query_circuit(items, query_item)
+        qc = self.build_query_circuit(items, query_item, deleted_items=deleted_items)
         qc.remove_final_measurements()
-        
         state = Statevector.from_instruction(qc)
         prob_zero = np.abs(state.data[0])**2
-        
         return prob_zero
+
+    def delete(self, item):
+        """Track deleted items (for simulation)."""
+        if not hasattr(self, 'deleted_items'):
+            self.deleted_items = []
+        self.deleted_items.append(item)
     
     def insert(self, item):
         """Track inserted items."""
