@@ -1,4 +1,4 @@
-# Phase 7 — Hybrid Compiler Optimizations
+# Phase 9 — Benchmark Suite QDBench
 
 ## 1. Motivation
 This phase addresses fundamental limitations and advances the quantum data structures (QDS) research agenda ...
