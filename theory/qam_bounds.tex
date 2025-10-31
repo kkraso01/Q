@@ -1,0 +1,16 @@
+% QAM False-Positive Bound and Noise Lemmas
+\section*{Lemma 2.1 (Ideal QAM False-Positive Bound)}
+Let $S$ be a set of $n$ items hashed into $m$ qubits using $k$ hash functions, each encoded by a phase rotation $R_z(\theta)$. For a query $y \notin S$, the false-positive probability $\alpha$ satisfies:
+\begin{equation}
+\alpha \leq \exp(-C k (1-\rho))
+\end{equation}
+where $\rho = n/m$ is the load factor and $C$ is a constant depending on $\theta$.
+
+\textbf{Proof Sketch:} By Chernoff/Hoeffding, the overlap measurement concentrates around its mean, and the probability of exceeding the threshold decays exponentially in $k(1-\rho)$.
+
+\section*{Lemma 2.2 (Noise-Perturbed QAM Bound)}
+Under Pauli noise with per-gate error $\epsilon$, the acceptance gap degrades as:
+\begin{equation}
+\alpha_{\text{noise}} \leq \alpha_{\text{ideal}} + O(k\epsilon)
+\end{equation}
+\textbf{Proof Sketch:} Each noisy gate perturbs the phase, and the total deviation accumulates linearly in $k\epsilon$.

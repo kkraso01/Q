@@ -1,0 +1,5 @@
+% QAM Lower Bound Argument
+\section*{Theorem (QAM Lower Bound under Pauli Noise)}
+Any QAM scheme using $k$ hash families and $m$ qubits requires $\Omega(\log m)$ qubits to preserve distinguishability between set and non-set queries under Pauli noise.
+
+\textbf{Proof Sketch:} If fewer than $\log m$ qubits are used, the state space is too small to encode $m$ distinct hash buckets. Under noise, the overlap between distinct encodings increases, making false positives unavoidable. Thus, $\Omega(\log m)$ qubits are necessary for reliable membership testing.

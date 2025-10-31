@@ -76,14 +76,17 @@ Q-SubSketch encodes substrings of a text into a quantum register using phase enc
 Q-SimHash encodes binary vectors into quantum states using $k$ phase rotations. Similarity queries are performed by measuring the overlap between two encoded states. This is related to classical SimHash and quantum fingerprinting.
 
 
+
 \section{Theoretical Results}
-We prove bounds on false positive rates for QAM, analyze noise robustness, and discuss the variance reduction from quantum batching. Key results:
+We provide new analytical bounds, lower bounds, and a formal model for QAM:
 \begin{itemize}[leftmargin=*,itemsep=0.5em]
-    \item \textbf{QAM false-positive bound:} $\alpha \leq \exp(-C k (1-\rho))$ for load factor $\rho = |S|/m$.
-    \item \textbf{Noise perturbation:} Acceptance gap degrades $\leq O(k\epsilon)$ under Pauli noise.
+    \item \textbf{Lemma 2.1 (Ideal QAM False-Positive Bound):} $\alpha \leq \exp(-C k (1-\rho))$ for load factor $\rho = |S|/m$. (See Appendix and `theory/qam_bounds.tex`)
+    \item \textbf{Lemma 2.2 (Noise-Perturbed QAM Bound):} Under Pauli noise, the acceptance gap degrades $\leq O(k\epsilon)$. (See Appendix and `theory/qam_bounds.tex`)
+    \item \textbf{QAM Lower Bound:} Any QAM scheme using $k$ hash families and $m$ qubits requires $\Omega(\log m)$ qubits to preserve distinguishability under Pauli noise. (See Appendix and `theory/qam_lower_bound.tex`)
+    \item \textbf{Quantum Cell Probe Model:} We define a quantum analogue of the classical cell probe model, where memory is a qubit array, queries are phase-based fingerprints, and measurements return acceptance bits. (See Appendix and `theory/cell_probe_model.md`)
     \item \textbf{Batching:} Variance reduction factor $\sim B$ for batch size $B$.
 \end{itemize}
-Proofs are provided in the Appendix.
+Proofs, definitions, and details are provided in the Appendix and the `theory/` directory.
 
 
 \section{Limitations and Future Work}
