@@ -77,6 +77,7 @@ Q-SimHash encodes binary vectors into quantum states using $k$ phase rotations. 
 
 
 
+
 \section{Theoretical Results}
 We provide new analytical bounds, lower bounds, and a formal model for QAM:
 \begin{itemize}[leftmargin=*,itemsep=0.5em]
@@ -85,12 +86,13 @@ We provide new analytical bounds, lower bounds, and a formal model for QAM:
     \item \textbf{QAM Lower Bound:} Any QAM scheme using $k$ hash families and $m$ qubits requires $\Omega(\log m)$ qubits to preserve distinguishability under Pauli noise. (See Appendix and `theory/qam_lower_bound.tex`)
     \item \textbf{Quantum Cell Probe Model:} We define a quantum analogue of the classical cell probe model, where memory is a qubit array, queries are phase-based fingerprints, and measurements return acceptance bits. (See Appendix and `theory/cell_probe_model.md`)
     \item \textbf{Batching:} Variance reduction factor $\sim B$ for batch size $B$.
+    \item \textbf{QAM Deletion Limitation:} Deletion by inverse phase (Rz(-\theta)) does not reliably suppress the acceptance probability for deleted items due to quantum interference and hash collisions. See empirical results and discussion in Appendix and `theory/qam_deletion_limitations.md`.
 \end{itemize}
 Proofs, definitions, and details are provided in the Appendix and the `theory/` directory.
 
 
 \section{Limitations and Future Work}
-Current quantum hardware is limited in qubit count and noise. Simulation is memory-intensive. Open questions include error mitigation, dynamic/streaming QDS, and hardware experiments.
+Current quantum hardware is limited in qubit count and noise. Simulation is memory-intensive. QAM deletion by inverse phase is not robust in practice (see Section~\ref{Theoretical Results} and Appendix). Open questions include error mitigation, dynamic/streaming QDS, robust quantum deletion, and hardware experiments.
 
 
 \section*{Contributions}

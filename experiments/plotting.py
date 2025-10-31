@@ -1,3 +1,27 @@
+def plot_batch_query_error_vs_amortized_cost(df, output_dir='results'):
+    """Plot error (FP, FN) vs amortized cost for different batch sizes."""
+    Path(output_dir).mkdir(exist_ok=True)
+    fig, ax = plt.subplots(figsize=(10, 6))
+    # Group by batch size and amortized shots
+    grouped = df.groupby(['batch_size', 'amortized_shots']).agg({
+        'fp_rate': 'mean',
+        'fn_rate': 'mean'
+    }).reset_index()
+    batch_sizes = sorted(df['batch_size'].unique())
+    colors = ['#2E86AB', '#A23B72', '#F18F01']
+    for i, batch in enumerate(batch_sizes):
+        sub = grouped[grouped['batch_size'] == batch]
+        ax.plot(sub['amortized_shots'], sub['fp_rate'], marker='o', label=f'FP, batch={batch}', color=colors[i%len(colors)])
+        ax.plot(sub['amortized_shots'], sub['fn_rate'], marker='s', linestyle='--', label=f'FN, batch={batch}', color=colors[i%len(colors)])
+    ax.set_xlabel('Amortized Shots per Query', fontsize=12)
+    ax.set_ylabel('Error Rate', fontsize=12)
+    ax.set_title('Batch Query: Error vs Amortized Cost', fontsize=14, fontweight='bold')
+    ax.legend(fontsize=11)
+    ax.grid(True, alpha=0.3)
+    output_file = Path(output_dir) / 'batch_query_error_vs_amortized_cost.png'
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    print(f"Saved: {output_file}")
+    plt.close()
 """
 Plotting utilities for QAM experimental results.
 
@@ -136,15 +160,16 @@ def plot_load_factor_analysis(df, output_dir='results'):
 def plot_all(csv_file, output_dir='results'):
     """Generate all plots from CSV results."""
     df = pd.read_csv(csv_file)
-    
     print(f"Loaded {len(df)} results from {csv_file}")
     print("\nGenerating plots...")
-    
-    plot_accuracy_vs_memory(df, output_dir)
-    plot_accuracy_vs_shots(df, output_dir)
-    plot_accuracy_vs_noise(df, output_dir)
-    plot_load_factor_analysis(df, output_dir)
-    
+    # Detect if this is a batch query CSV (has 'batch_size' column)
+    if 'batch_size' in df.columns and 'amortized_shots' in df.columns:
+        plot_batch_query_error_vs_amortized_cost(df, output_dir)
+    else:
+        plot_accuracy_vs_memory(df, output_dir)
+        plot_accuracy_vs_shots(df, output_dir)
+        plot_accuracy_vs_noise(df, output_dir)
+        plot_load_factor_analysis(df, output_dir)
     print("\nAll plots generated!")
 
 

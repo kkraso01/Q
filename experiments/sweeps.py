@@ -52,7 +52,60 @@ def classical_bloom_filter(items, query_item, m, k):
     return True  # Probably in set
 
 
-def run_single_experiment(m, k, set_size, shots, noise_rate, theta=np.pi/4, n_trials=10):
+def run_batch_query_experiment(m, k, set_size, shots, batch_sizes=[1, 16, 64], noise_rate=0.0, theta=np.pi/4, n_trials=10, output_dir='results'):
+    """
+    Run batch query experiments for QAM.
+    For each batch size, run n_trials and record error and amortized cost.
+    Saves results as CSV in output_dir.
+    """
+    np.random.seed(42)
+    from sim.qam import QAM, create_noise_model
+    Path(output_dir).mkdir(exist_ok=True)
+    all_items = generate_random_items(set_size * 3, length=8)
+    noise_model = create_noise_model(noise_rate) if noise_rate > 0 else None
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    output_file = Path(output_dir) / f'qam_batch_query_{timestamp}.csv'
+    results = []
+    for batch in batch_sizes:
+        for trial in range(n_trials):
+            trial_seed = 42 + trial
+            np.random.seed(trial_seed)
+            inserted = all_items[:set_size]
+            # For each batch, sample batch query items (half in set, half not)
+            n_in = batch // 2
+            n_out = batch - n_in
+            in_items = all_items[set_size:set_size + n_in]
+            out_items = all_items[set_size + 10:set_size + 10 + n_out]
+            query_items = list(in_items) + list(out_items)
+            qam = QAM(m=m, k=k, theta=theta)
+            batch_results = qam.batch_query(inserted, query_items, shots=shots, noise_model=noise_model)
+            # Compute error rates
+            fp = sum(1 for i, (item, exp, is_member) in enumerate(batch_results[n_in:]) if is_member)
+            fn = sum(1 for i, (item, exp, is_member) in enumerate(batch_results[:n_in]) if not is_member)
+            fp_rate = fp / n_out if n_out > 0 else 0.0
+            fn_rate = fn / n_in if n_in > 0 else 0.0
+            # Amortized cost: total shots / batch size
+            amortized_shots = shots / batch
+            results.append({
+                'm': m,
+                'k': k,
+                'set_size': set_size,
+                'shots': shots,
+                'batch_size': batch,
+                'noise': noise_rate,
+                'trial': trial,
+                'fp_rate': fp_rate,
+                'fn_rate': fn_rate,
+                'amortized_shots': amortized_shots
+            })
+    # Save results
+    if results:
+        with open(output_file, 'w', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=results[0].keys())
+            writer.writeheader()
+            writer.writerows(results)
+        print(f"Batch query results saved to {output_file}")
+    return output_file
     """
     Run single parameter configuration experiment.
     
@@ -230,15 +283,17 @@ def main():
     parser.add_argument('--noise', type=float, default=0.0, help='Noise rate')
     parser.add_argument('--sweep', action='store_true', help='Run full parameter sweep')
     parser.add_argument('--output-dir', type=str, default='results', help='Output directory')
+    parser.add_argument('--batch', action='store_true', help='Run batch query experiment')
     
     args = parser.parse_args()
     
-    if args.sweep:
+    if args.batch:
+        run_batch_query_experiment(args.m, args.k, args.set_size, args.shots, batch_sizes=[1, 16, 64], noise_rate=args.noise, output_dir=args.output_dir)
+    elif args.sweep:
         run_parameter_sweep(args.output_dir)
     else:
         print(f"Running single experiment: m={args.m}, k={args.k}, |S|={args.set_size}, shots={args.shots}, ε={args.noise}")
         metrics = run_single_experiment(args.m, args.k, args.set_size, args.shots, args.noise)
-        
         print("\nResults:")
         for key, value in metrics.items():
             print(f"  {key}: {value:.4f}")

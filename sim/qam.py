@@ -13,6 +13,16 @@ from .utils import make_hash_functions, bitstring_to_int
 
 
 class QAM:
+    def _cache_key(self, items, deleted_items=None):
+        # Use tuple of hashes for cache key
+        items_key = tuple(sorted(hash(x) for x in items))
+        deleted_key = tuple(sorted(hash(x) for x in (deleted_items or [])))
+        return (items_key, deleted_key)
+
+    def clear_cache(self):
+        self._circuit_cache = {}
+        self._statevector_cache = {}
+
     """Quantum Approximate Membership data structure."""
     
     def __init__(self, m, k, theta=np.pi/4):
@@ -45,24 +55,28 @@ class QAM:
         Returns:
             QuantumCircuit with phase encodings
         """
+        # State caching: cache circuit for given items/deleted_items
+        if not hasattr(self, '_circuit_cache'):
+            self._circuit_cache = {}
+        key = self._cache_key(items, deleted_items)
+        if key in self._circuit_cache:
+            return self._circuit_cache[key].copy()
+
         qc = QuantumCircuit(self.m)
-        
         # Initialize to |+⟩^⊗m for superposition
         qc.h(range(self.m))
-        
         # Insert each item by applying phase rotations
         for item in items:
             indices = self._get_indices(item)
             for idx in indices:
                 qc.rz(self.theta, idx)
-
-        # Apply inverse phase for deleted items
+        # Apply inverse phase for deleted items (quantum deletion)
         if deleted_items:
             for item in deleted_items:
                 indices = self._get_indices(item)
                 for idx in indices:
                     qc.rz(-self.theta, idx)
-
+        self._circuit_cache[key] = qc.copy()
         return qc
     
     def build_query_circuit(self, items, query_item, deleted_items=None):
@@ -123,9 +137,25 @@ class QAM:
         Returns:
             Probability of measuring |0...0⟩
         """
-        qc = self.build_query_circuit(items, query_item, deleted_items=deleted_items)
-        qc.remove_final_measurements()
-        state = Statevector.from_instruction(qc)
+        # Statevector caching: cache state for given items/deleted_items
+        if not hasattr(self, '_statevector_cache'):
+            self._statevector_cache = {}
+        key = self._cache_key(items, deleted_items)
+        if key in self._statevector_cache:
+            state = self._statevector_cache[key]
+        else:
+            qc = self.build_insert_circuit(items, deleted_items=deleted_items)
+            qc.remove_final_measurements()
+            state = Statevector.from_instruction(qc)
+            self._statevector_cache[key] = state
+        # Now apply query rotations and measure
+        qc_query = QuantumCircuit(self.m)
+        query_indices = self._get_indices(query_item)
+        for idx in query_indices:
+            qc_query.rz(-self.theta, idx)
+        qc_query.h(range(self.m))
+        # Compose query circuit onto state
+        state = state.evolve(qc_query)
         prob_zero = np.abs(state.data[0])**2
         return prob_zero
 

@@ -6,33 +6,24 @@ This is a research project exploring quantum data structures, focusing on achiev
 
 
 
-## Phase 3 Actionable Tasks (Integration and Theory)
-1. **Sharpen false-positive bound**
-  - Use Chernoff/Hoeffding to bound overlap measurement deviation.
-  - Derive a closed form in terms of θ and bucket load.
-  - Add Lemma 2.1 (ideal) and Lemma 2.2 (noise) to `theory/`.
-2. **Add a lower bound argument**
-  - Prove that any QAM scheme depending on k hash families requires Ω(log m) qubits to preserve distinguishability under Pauli noise.
-  - Add to `theory/` and summarize in the paper.
-3. **Qubit topology variants**
-  - Implement and compare linear chain, ring, and all-to-all entanglement in QAM.
-  - Plot α vs depth vs topology.
-4. **Noise-sensitivity heatmaps**
-  - Sweep noise ε ∈ {0, 1e-4, …, 5e-2} and shots S ∈ {128 … 4096}.
-  - Plot 2D heatmap of error.
-5. **Implement state caching**
+
+## Phase 5–End: Engineering, Scaling, and Finalization
+1. **Implement state caching in QAM**
   - Avoid repeated re-encoding between batched runs for 20–40% runtime reduction.
-6. **Add configuration sweeps on disk**
+2. **Add configuration sweeps and logging**
   - Log gate depth, measurement variance, and wall-clock simulation time for all experiments.
-  - Save as appendix table.
-7. **Expand Q-SubSketch**
-  - Evaluate on Wikipedia/code corpus, plot AUC vs substring length.
-8. **Update related_work.md**
-  - Add new citations and discussion as needed.
-9. **Formalize Quantum Cell Probe Model**
-  - Add to `theory/` and summarize in the paper.
-10. **Update all figures and paper**
-  - Ensure all new results are reflected in `results/` and `paper/draft.tex`.
+  - Save as appendix table in `results/` and reference in the paper.
+3. **Expand Q-SubSketch evaluation**
+  - Evaluate on real data (Wikipedia/code corpus), plot AUC vs substring length.
+  - Integrate results and analysis into the paper.
+4. **Generate and save all required figures**
+  - Ensure 6–10+ figures are reproducible and saved in `results/`.
+  - Include accuracy vs memory, shots, noise, topology, batch, and AUC plots.
+5. **Update and polish all paper sections**
+  - Ensure all new results, theory, and experiments are reflected in `paper/draft.tex` and appendices.
+6. **Finalize code, tests, and documentation**
+  - Ensure all code is tested, documented, and reproducible for submission.
+
 
 
 ## Repository Structure
@@ -140,13 +131,12 @@ qam_insert(qc, b"test_item", hash_functions, m, theta)
 - Update the paper in `paper/draft.tex` as new results/theory are added.
 
 ## Acceptance Criteria
-- All new theory and lower bounds are in `theory/` and cited in the paper.
-- Qubit topology and noise heatmap experiments are implemented and plotted.
-- State caching and config sweeps are integrated and measured.
-- Q-SubSketch is evaluated on real data.
-- All code, figures, and paper sections are updated.
+- All new engineering, scaling, and theory results are in `theory/`, `results/`, and cited in the paper.
+- State caching, config sweeps, and Q-SubSketch evaluation are implemented and measured.
+- All required figures are generated and reproducible.
+- All code, figures, and paper sections are updated and ready for submission.
 
-## When done, report: "Phase 3 complete. What next?"
+## When done, report: "Phase 5–End complete. What next?"
 
 ## Theoretical Deliverables
 
