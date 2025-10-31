@@ -6,11 +6,13 @@ Uses random hyperplanes for cosine similarity estimation via amplitude interfere
 """
 import numpy as np
 from qiskit import QuantumCircuit
-from .amplitude_sketch import AmplitudeSketch
-from .utils import bitstring_to_int
+from qiskit.quantum_info import Statevector
+from qiskit_aer import AerSimulator
+from qiskit_aer.noise import NoiseModel, depolarizing_error
+from .utils import make_hash_functions, bitstring_to_int
 
 
-class QLSH(AmplitudeSketch):
+class QLSH:
     """Quantum Locality-Sensitive Hashing for similarity search."""
     
     def __init__(self, m, k=3, theta=np.pi/4, d=128):
@@ -23,10 +25,14 @@ class QLSH(AmplitudeSketch):
             theta: Phase rotation angle (default π/4)
             d: Vector dimensionality
         """
-        super().__init__(m, k, theta)
+        self.m = m
+        self.k = k
+        self.theta = theta
         self.d = d
+        self.hash_functions = make_hash_functions(k)
         self.hyperplanes = self._generate_hyperplanes()
         self.inserted_vectors = []
+        self._circuit_cache = {}
         self._statevector_cache = {}
     
     def _generate_hyperplanes(self):
@@ -54,26 +60,6 @@ class QLSH(AmplitudeSketch):
         sig_hash = hash(signature)
         return [h(sig_hash) % self.m for h in self.hash_functions]
     
-    def _get_indices(self, x):
-        """Get hash indices for compatibility (implements abstract method)."""
-        # x is a vector, get its signature first
-        signature = self._get_hash_signature(x)
-        return self._signature_to_indices(signature)
-    
-    def _build_insert_circuit(self, items):
-        """Build insert circuit (implements abstract method)."""
-        # items is a list of vectors
-        qc = QuantumCircuit(self.m)
-        qc.h(range(self.m))  # Initialize to superposition
-        
-        for vector in items:
-            signature = self._get_hash_signature(vector)
-            indices = self._signature_to_indices(signature)
-            for idx in indices:
-                qc.rz(self.theta, idx)
-        
-        return qc
-    
     def build_insert_circuit(self, vectors):
         """
         Build circuit encoding all inserted vectors.
@@ -91,7 +77,16 @@ class QLSH(AmplitudeSketch):
         if cache_key in self._circuit_cache:
             return self._circuit_cache[cache_key].copy()
         
-        qc = self._build_insert_circuit(vectors)
+        qc = QuantumCircuit(self.m)
+        # Initialize to superposition
+        qc.h(range(self.m))
+        
+        # Insert each vector by encoding its LSH signature
+        for signature in signatures:
+            indices = self._signature_to_indices(signature)
+            # Apply phase rotation based on signature
+            for idx in indices:
+                qc.rz(self.theta, idx)
         
         self._circuit_cache[cache_key] = qc.copy()
         return qc
@@ -123,14 +118,14 @@ class QLSH(AmplitudeSketch):
         
         qc_overlap.measure_all()
         
-        # Simulate with memory-efficient method for large m
-        noise_model = self._create_noise_model(noise_level)
-        from qiskit_aer import AerSimulator
-        
-        if self.m > 16:
-            simulator = AerSimulator(method='matrix_product_state', noise_model=noise_model)
+        # Simulate
+        if noise_level > 0:
+            noise_model = NoiseModel()
+            error = depolarizing_error(noise_level, 2)
+            noise_model.add_all_qubit_quantum_error(error, ['cz', 'cx'])
+            simulator = AerSimulator(noise_model=noise_model)
         else:
-            simulator = AerSimulator(method='automatic', noise_model=noise_model)
+            simulator = AerSimulator()
         
         result = simulator.run(qc_overlap, shots=shots).result()
         counts = result.get_counts()
@@ -177,31 +172,8 @@ class QLSH(AmplitudeSketch):
     def insert(self, vector):
         """Insert vector into LSH structure."""
         self.inserted_vectors.append(vector.copy())
-        self.n_inserts += 1
         # Clear caches
         self._circuit_cache.clear()
-        self._statevector_cache.clear()
-    
-    def query(self, x=None, items=None, shots=512, noise_level=0.0, k_neighbors=None):
-        """Query for similarity or k-NN (implements abstract method)."""
-        if k_neighbors is not None:
-            # k-NN query
-            return self.query_knn(x, k_neighbors=k_neighbors, shots=shots, noise_level=noise_level)
-        elif items is not None and len(items) > 0:
-            # Pairwise similarity query
-            return self.cosine_similarity_estimate(x, items[0], shots=shots, noise_level=noise_level)
-        else:
-            raise ValueError("Q-LSH query requires either k_neighbors or items")
-    
-    def clear_cache(self):
-        """Clear all caches (extends base class)."""
-        super().clear_cache()
-        self._statevector_cache.clear()
-    
-    def reset(self):
-        """Reset to empty state (extends base class)."""
-        super().reset()
-        self.inserted_vectors.clear()
         self._statevector_cache.clear()
     
     def get_circuit_depth(self, vectors=None):

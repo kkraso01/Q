@@ -3,17 +3,16 @@ Quantum Hashed Trie (QHT) - Prefix Membership Structure
 
 Supports prefix-based membership queries using phase-encoded trie structure.
 Each character in a prefix is mapped to qubit buckets via hash functions.
-
-REFACTORED: Now inherits from AmplitudeSketch base class.
 """
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector
 from qiskit_aer import AerSimulator
-from .amplitude_sketch import AmplitudeSketch
+from qiskit_aer.noise import NoiseModel, depolarizing_error
+from .utils import make_hash_functions, bitstring_to_int
 
 
-class QHT(AmplitudeSketch):
+class QHT:
     """Quantum Hashed Trie for prefix membership queries."""
     
     def __init__(self, m, b, L, theta=np.pi/4, k=3):
@@ -27,13 +26,14 @@ class QHT(AmplitudeSketch):
             theta: Phase rotation angle (default π/4)
             k: Number of hash functions per character
         """
-        # Initialize base class
-        super().__init__(m, k, theta)
-        
-        # QHT-specific parameters
-        self.b = b  # Branching factor
-        self.L = L  # Maximum depth
+        self.m = m
+        self.b = b
+        self.L = L
+        self.theta = theta
+        self.k = k
+        self.hash_functions = make_hash_functions(k)
         self.inserted_items = []
+        self._circuit_cache = {}
         self._statevector_cache = {}
     
     def _get_indices(self, char, depth):
@@ -47,30 +47,6 @@ class QHT(AmplitudeSketch):
         if isinstance(x, bytes):
             x = x.decode('utf-8', errors='ignore')
         return str(x)[:min(length, len(str(x)))]
-    
-    def _build_insert_circuit(self, item):
-        """
-        Build circuit for inserting single item (implements abstract method).
-        
-        Args:
-            item: Item to insert (string or bytes)
-            
-        Returns:
-            QuantumCircuit with prefix encodings
-        """
-        qc = QuantumCircuit(self.m)
-        # Initialize to superposition
-        qc.h(range(self.m))
-        
-        # Encode all prefixes of this item
-        item_str = item.decode('utf-8') if isinstance(item, bytes) else str(item)
-        for depth in range(1, min(self.L + 1, len(item_str) + 1)):
-            char = item_str[depth - 1]
-            indices = self._get_indices(char, depth)
-            for idx in indices:
-                qc.rz(self.theta, idx)
-        
-        return qc
     
     def build_insert_circuit(self, items):
         """
@@ -136,15 +112,14 @@ class QHT(AmplitudeSketch):
         # Measure all qubits
         qc_query.measure_all()
         
-        # Simulate - use matrix_product_state for memory efficiency on larger circuits
-        noise_model = self._create_noise_model(noise_level)
-        # For m <= 16: use standard simulation
-        # For m > 16: use matrix_product_state method for better memory efficiency
-        if self.m <= 16:
-            simulator = AerSimulator(method='automatic', noise_model=noise_model)
+        # Simulate
+        if noise_level > 0:
+            noise_model = NoiseModel()
+            error = depolarizing_error(noise_level, 2)
+            noise_model.add_all_qubit_quantum_error(error, ['cz', 'cx'])
+            simulator = AerSimulator(noise_model=noise_model)
         else:
-            # Use matrix_product_state for larger circuits (more memory efficient)
-            simulator = AerSimulator(method='matrix_product_state', noise_model=noise_model) if noise_model else AerSimulator(method='matrix_product_state')
+            simulator = AerSimulator()
         
         result = simulator.run(qc_query, shots=shots).result()
         counts = result.get_counts()
@@ -156,42 +131,15 @@ class QHT(AmplitudeSketch):
         return acceptance
     
     def insert(self, x):
-        """Insert item into the trie (stateful API)."""
+        """Insert item into the trie."""
         self.inserted_items.append(x)
-        self.n_inserts += 1
         # Clear caches
         self._circuit_cache.clear()
         self._statevector_cache.clear()
     
-    def clear_cache(self):
-        """Clear all caches (extends base class)."""
-        super().clear_cache()
-        self._statevector_cache.clear()
-    
-    def reset(self):
-        """Reset to empty state (extends base class)."""
-        super().reset()
-        self.inserted_items.clear()
-        self._statevector_cache.clear()
-    
-    def get_circuit_depth(self, x=None):
-        """
-        Estimate circuit depth.
-        
-        Args:
-            x: Optional item to analyze. If None, uses inserted_items.
-            
-        Returns:
-            Estimated gate depth
-        """
-        if x is None:
-            # Use built circuit depth for all inserted items
-            if self.inserted_items:
-                qc = self.build_insert_circuit(self.inserted_items)
-                return qc.depth()
-            return 0
-        
-        item_str = x.decode('utf-8') if isinstance(x, bytes) else str(x)
-        prefix_len = min(self.L, len(item_str))
-        # Depth = k rotations per character × prefix_len
-        return self.k * prefix_len
+    def get_circuit_depth(self, items=None):
+        """Get circuit depth for given items."""
+        if items is None:
+            items = self.inserted_items
+        qc = self.build_insert_circuit(items)
+        return qc.depth()

@@ -3,19 +3,17 @@ Quantum Heavy Hitters (Q-HH) - Top-K Frequency Estimation
 
 Identifies the most frequent items in a stream using quantum phase-weighted encoding.
 Similar to Count-Min Sketch but uses quantum amplitude for frequency estimation.
-
-REFACTORED: Now inherits from AmplitudeSketch base class.
 """
 import numpy as np
 from collections import Counter
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector
 from qiskit_aer import AerSimulator
-from .amplitude_sketch import AmplitudeSketch
-from .utils import bitstring_to_int
+from qiskit_aer.noise import NoiseModel, depolarizing_error
+from .utils import make_hash_functions, bitstring_to_int
 
 
-class QHH(AmplitudeSketch):
+class QHH:
     """Quantum Heavy Hitters for top-k frequency estimation."""
     
     def __init__(self, m, k=3, theta=np.pi/4):
@@ -27,23 +25,18 @@ class QHH(AmplitudeSketch):
             k: Number of hash functions
             theta: Phase rotation angle (default π/4)
         """
-        # Initialize base class
-        super().__init__(m, k, theta)
-        
-        # Q-HH specific: maintain stream
+        self.m = m
+        self.k = k
+        self.theta = theta
+        self.hash_functions = make_hash_functions(k)
         self.stream = []
+        self._circuit_cache = {}
         self._statevector_cache = {}
     
     def _get_indices(self, x):
-        """Get k qubit indices (buckets) for item x (legacy compat)."""
-        x_bytes = x if isinstance(x, bytes) else x.encode() if isinstance(x, str) else bytes([x])
-        return self._hash_to_indices(x_bytes)
-    
-    def _build_insert_circuit(self, items):
-        """Build circuit for items (implements abstract method)."""
-        if not isinstance(items, (list, tuple)):
-            items = [items]
-        return self.build_circuit(items)
+        """Get k qubit indices (buckets) for item x."""
+        x_int = bitstring_to_int(x)
+        return [h(x_int) % self.m for h in self.hash_functions]
     
     def build_circuit(self, items):
         """
@@ -107,12 +100,14 @@ class QHH(AmplitudeSketch):
         
         qc_query.measure_all()
         
-        # Simulate using matrix_product_state for larger circuits
-        noise_model = self._create_noise_model(noise_level)
-        if self.m <= 16:
-            simulator = AerSimulator(method='automatic', noise_model=noise_model)
+        # Simulate
+        if noise_level > 0:
+            noise_model = NoiseModel()
+            error = depolarizing_error(noise_level, 2)
+            noise_model.add_all_qubit_quantum_error(error, ['cz', 'cx'])
+            simulator = AerSimulator(noise_model=noise_model)
         else:
-            simulator = AerSimulator(method='matrix_product_state', noise_model=noise_model) if noise_model else AerSimulator(method='matrix_product_state')
+            simulator = AerSimulator()
         
         result = simulator.run(qc_query, shots=shots).result()
         counts = result.get_counts()
@@ -164,36 +159,9 @@ class QHH(AmplitudeSketch):
     def insert(self, x):
         """Insert item into stream."""
         self.stream.append(x)
-        self.n_inserts += 1
         # Clear caches when stream changes
         self._circuit_cache.clear()
         self._statevector_cache.clear()
-    
-    def query(self, x=None, items=None, shots=512, noise_level=0.0):
-        """Query frequency (implements abstract method)."""
-        if items is None:
-            items = self.stream
-        if x is None:
-            raise ValueError("Q-HH query requires an item")
-        return self.estimate_frequency(x, items, shots, noise_level)
-    
-    def clear_cache(self):
-        """Clear all caches (extends base class)."""
-        super().clear_cache()
-        self._statevector_cache.clear()
-    
-    def reset(self):
-        """Reset to empty state (extends base class)."""
-        super().reset()
-        self.stream.clear()
-        self._statevector_cache.clear()
-    
-    def get_circuit_depth(self, x=None):
-        """Estimate circuit depth."""
-        items = x if x is not None else self.stream
-        if items:
-            return self.k * len(items) if isinstance(items, (list, tuple)) else self.k
-        return 0
     
     def get_true_frequencies(self, items=None):
         """Get true frequency counts (for evaluation)."""

@@ -2,15 +2,12 @@
 Quantum Similarity Hash (Q-SimHash)
 
 Approximate nearest-neighbor search using amplitude-phase encoding.
-
-REFACTORED: Now inherits from AmplitudeSketch base class.
 """
 import numpy as np
 from qiskit import QuantumCircuit
-from .amplitude_sketch import AmplitudeSketch
-from .utils import bitstring_to_int
+from .utils import make_hash_functions, bitstring_to_int
 
-class QSimHash(AmplitudeSketch):
+class QSimHash:
     """Quantum Similarity Hash for approximate nearest neighbor."""
     def __init__(self, m, k, theta=np.pi/4):
         """
@@ -19,8 +16,10 @@ class QSimHash(AmplitudeSketch):
             k: Number of hash functions (hyperplanes)
             theta: Phase rotation angle
         """
-        # Initialize base class
-        super().__init__(m, k, theta)
+        self.m = m
+        self.k = k
+        self.theta = theta
+        self.hash_functions = make_hash_functions(k)
 
     def encode_vector(self, vec):
         """
@@ -33,12 +32,10 @@ class QSimHash(AmplitudeSketch):
             bits = np.array(vec, dtype=np.uint8)
         return bits
 
-    def _build_insert_circuit(self, vec):
-        """Build circuit for inserting vector (implements abstract method)."""
-        return self.build_encoding_circuit(vec)
-    
     def build_encoding_circuit(self, vec):
-        """Build circuit encoding vector signs into phases (legacy API)."""
+        """
+        Build circuit encoding vector signs into phases.
+        """
         qc = QuantumCircuit(self.m)
         qc.h(range(self.m))
         bits = self.encode_vector(vec)
@@ -47,20 +44,6 @@ class QSimHash(AmplitudeSketch):
             angle = self.theta if b else -self.theta
             qc.rz(angle, idx)
         return qc
-    
-    def insert(self, vec):
-        """Insert vector (stateful API compatibility)."""
-        self.n_inserts += 1
-    
-    def query(self, vec1, vec2=None, shots=512, noise_model=None):
-        """
-        Query similarity (supports both single vec and pairwise modes).
-        
-        If vec2 is None, this is placeholder for future stateful mode.
-        """
-        if vec2 is None:
-            raise ValueError("Q-SimHash requires two vectors for similarity")
-        return self.similarity(vec1, vec2, shots=shots, noise_model=noise_model)
 
     def build_similarity_circuit(self, vec1, vec2):
         """
@@ -77,7 +60,9 @@ class QSimHash(AmplitudeSketch):
         return qc
 
     def similarity(self, vec1, vec2, shots=512, noise_model=None):
-        """Estimate similarity between two vectors."""
+        """
+        Estimate similarity between two vectors.
+        """
         from qiskit_aer import AerSimulator
         simulator = AerSimulator(method='automatic', noise_model=noise_model) if noise_model else AerSimulator(method='automatic')
         qc = self.build_similarity_circuit(vec1, vec2)
@@ -88,7 +73,3 @@ class QSimHash(AmplitudeSketch):
         all_zero_count = counts.get(zero_bitstring, 0)
         expectation = all_zero_count / shots
         return expectation
-    
-    def get_circuit_depth(self, vec):
-        """Estimate circuit depth for vector encoding."""
-        return self.k  # k phase rotations
