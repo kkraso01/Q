@@ -31,7 +31,7 @@ Probabilistic data structures are essential for scalable search, deduplication, 
 
 \section{Related Work}
 \begin{itemize}[leftmargin=*,itemsep=0.5em]
-    \item \textbf{Classical probabilistic data structures:} Bloom filters~\cite{bloom1970space}, counting Bloom filters, SimHash~\cite{charikar2002similarity}, and suffix arrays~\cite{manber1993suffix} are widely used for approximate membership, similarity, and substring search.
+    \item \textbf{Classical probabilistic data structures:} Bloom filters~\cite{bloom1970space}, counting Bloom filters, SimHash~\cite{charikar2002similarity}, and suffix arrays~\cite{manber1993suffix} are widely used for approximate membership, similarity, and substring search. Recent high-performance baselines include Cuckoo filters, XOR filters, and Vacuum filters, which are included in our experimental comparisons.
     \item \textbf{Quantum search and hashing:} Grover's algorithm~\cite{grover1996fast} provides quadratic speedup for unstructured search. Quantum fingerprinting~\cite{buhrman2001quantum} and quantum Bloom filters~\cite{giovannetti2008quantum} have been proposed for efficient data representation and comparison.
     \item \textbf{Quantum circuit model:} We adopt the unitary circuit model with noisy measurements, as implemented in Qiskit~\cite{qiskit}.
 \end{itemize}
@@ -47,6 +47,16 @@ We use the unitary circuit model with the following constraints:
 \end{itemize}
 We compare QDS to classical baselines under matched memory and accuracy constraints.
 
+
+\section{Classical Baselines}
+We compare all quantum data structures to the following classical baselines:
+\begin{itemize}[leftmargin=*,itemsep=0.5em]
+    \item \textbf{Bloom filter:} Standard $k$-hash bit array.
+    \item \textbf{Cuckoo filter:} Bucketed hash table with kick-out insertion, supporting deletions.
+    \item \textbf{XOR filter:} Space-efficient, fast membership filter using XOR-based hashing.
+    \item \textbf{Vacuum filter:} High-performance Bloom variant with improved false positive rates.
+\end{itemize}
+These baselines are implemented and evaluated alongside quantum approaches in all plots and tables.
 
 \section{Quantum Data Structure Algorithms}
 \subsection{Quantum Approximate Membership (QAM)}
@@ -79,6 +89,9 @@ Proofs are provided in the Appendix.
 \section{Limitations and Future Work}
 Current quantum hardware is limited in qubit count and noise. Simulation is memory-intensive. Open questions include error mitigation, dynamic/streaming QDS, and hardware experiments.
 
+
+\section*{Contributions}
+This work was solely conducted by Konstantin Krasovitskiy, who designed, implemented, and evaluated all quantum and classical data structure baselines, developed the theoretical analysis, and prepared the manuscript.
 
 \section*{Acknowledgments}
 We thank the Qiskit community and prior authors for foundational work.

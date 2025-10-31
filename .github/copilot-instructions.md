@@ -4,13 +4,36 @@
 
 This is a research project exploring quantum data structures, focusing on achieving preliminary results in 4–6 weeks. The primary goal is to develop quantum alternatives to classical probabilistic data structures (Bloom filters, SimHash, suffix arrays) with demonstrable trade-offs in accuracy, memory, and query performance.
 
-## Core Research Targets (Priority Order)
 
-1. **Quantum Approximate Membership (QAM)** — "Quantum Bloom Filter"
-2. **Quantum Suffix Sketch (Q-SubSketch)** — Substring search
-3. **Quantum Similarity Hash (Q-SimHash)** — Approximate nearest-neighbor
 
-Start with QAM first for fastest results.
+## Phase 3 Actionable Tasks (Integration and Theory)
+1. **Sharpen false-positive bound**
+  - Use Chernoff/Hoeffding to bound overlap measurement deviation.
+  - Derive a closed form in terms of θ and bucket load.
+  - Add Lemma 2.1 (ideal) and Lemma 2.2 (noise) to `theory/`.
+2. **Add a lower bound argument**
+  - Prove that any QAM scheme depending on k hash families requires Ω(log m) qubits to preserve distinguishability under Pauli noise.
+  - Add to `theory/` and summarize in the paper.
+3. **Qubit topology variants**
+  - Implement and compare linear chain, ring, and all-to-all entanglement in QAM.
+  - Plot α vs depth vs topology.
+4. **Noise-sensitivity heatmaps**
+  - Sweep noise ε ∈ {0, 1e-4, …, 5e-2} and shots S ∈ {128 … 4096}.
+  - Plot 2D heatmap of error.
+5. **Implement state caching**
+  - Avoid repeated re-encoding between batched runs for 20–40% runtime reduction.
+6. **Add configuration sweeps on disk**
+  - Log gate depth, measurement variance, and wall-clock simulation time for all experiments.
+  - Save as appendix table.
+7. **Expand Q-SubSketch**
+  - Evaluate on Wikipedia/code corpus, plot AUC vs substring length.
+8. **Update related_work.md**
+  - Add new citations and discussion as needed.
+9. **Formalize Quantum Cell Probe Model**
+  - Add to `theory/` and summarize in the paper.
+10. **Update all figures and paper**
+  - Ensure all new results are reflected in `results/` and `paper/draft.tex`.
+
 
 ## Repository Structure
 
@@ -108,27 +131,22 @@ qam_insert(qc, b"test_item", hash_functions, m, theta)
 - SimHash with k hyperplanes (for Q-SimHash)
 - Suffix arrays + sketches (for Q-SubSketch)
 
-## Code Standards
 
-### Reproducibility (Critical)
+## Coding Standards
+- Use deterministic RNG seeds.
+- All new code must have unit tests in `sim/test_*.py`.
+- All experiments must be reproducible via scripts in `experiments/`.
+- Document all new theory in `theory/`.
+- Update the paper in `paper/draft.tex` as new results/theory are added.
 
-- Use **deterministic RNG seeds** everywhere
-- Config-driven experiments: `python run_experiments.py --config cfg.yml`
-- Save raw CSV data alongside plots
-- Version control all experimental configs
+## Acceptance Criteria
+- All new theory and lower bounds are in `theory/` and cited in the paper.
+- Qubit topology and noise heatmap experiments are implemented and plotted.
+- State caching and config sweeps are integrated and measured.
+- Q-SubSketch is evaluated on real data.
+- All code, figures, and paper sections are updated.
 
-### Testing Requirements (Local Only)
-
-- Unit tests for: encoding functions, hash mapping, acceptance thresholding
-- Run manually: `pytest sim/ -v` or `python -m pytest`
-- Example test structure:
-  ```python
-  def test_qam_phase_encoding():
-      np.random.seed(42)  # Always set seed for reproducibility
-      # Verify phase rotations applied at correct indices
-      # Check unitary construction follows no-cloning
-      assert circuit.num_qubits == expected_m
-  ```
+## When done, report: "Phase 3 complete. What next?"
 
 ## Theoretical Deliverables
 

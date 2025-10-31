@@ -12,7 +12,9 @@ from datetime import datetime
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
 
+
 from sim.qam import QAM, create_noise_model
+from sim.classical_filters import CuckooFilter, XORFilter, VacuumFilter
 
 
 def generate_random_items(n, length=8):
@@ -64,20 +66,28 @@ def run_single_experiment(m, k, set_size, shots, noise_rate, theta=np.pi/4, n_tr
     # Generate dataset
     all_items = generate_random_items(set_size * 3, length=8)
     
+
     qam_fp_rates = []
     qam_fn_rates = []
     classical_fp_rates = []
     classical_fn_rates = []
+    cuckoo_fp_rates = []
+    cuckoo_fn_rates = []
+    xor_fp_rates = []
+    xor_fn_rates = []
+    vacuum_fp_rates = []
+    vacuum_fn_rates = []
     
+
     for trial in range(n_trials):
         trial_seed = 42 + trial
         np.random.seed(trial_seed)
-        
+
         # Split into inserted and test sets
         inserted = all_items[:set_size]
         test_positive = all_items[set_size:set_size + 10]  # In set
         test_negative = all_items[set_size + 10:set_size + 20]  # Not in set
-        
+
         # QAM metrics
         qam_fps = 0
         qam_fns = 0
@@ -85,28 +95,53 @@ def run_single_experiment(m, k, set_size, shots, noise_rate, theta=np.pi/4, n_tr
             exp = qam.query(inserted, item, shots=shots, noise_model=noise_model)
             if exp >= 0.5:  # Threshold
                 qam_fps += 1
-        
+
         for item in test_positive:
             exp = qam.query(inserted, item, shots=shots, noise_model=noise_model)
             if exp < 0.5:
                 qam_fns += 1
-        
+
         qam_fp_rates.append(qam_fps / len(test_negative))
         qam_fn_rates.append(qam_fns / len(test_positive))
-        
-        # Classical baseline
+
+        # Classical Bloom filter baseline
         classical_fps = 0
         classical_fns = 0
         for item in test_negative:
             if classical_bloom_filter(inserted, item, m, k):
                 classical_fps += 1
-        
         for item in test_positive:
             if not classical_bloom_filter(inserted, item, m, k):
                 classical_fns += 1
-        
         classical_fp_rates.append(classical_fps / len(test_negative))
         classical_fn_rates.append(classical_fns / len(test_positive))
+
+        # Cuckoo filter baseline
+        cuckoo = CuckooFilter(m)
+        for x in inserted:
+            cuckoo.insert(x)
+        cuckoo_fps = sum(cuckoo.contains(x) for x in test_negative)
+        cuckoo_fns = sum(not cuckoo.contains(x) for x in test_positive)
+        cuckoo_fp_rates.append(cuckoo_fps / len(test_negative))
+        cuckoo_fn_rates.append(cuckoo_fns / len(test_positive))
+
+        # XOR filter baseline
+        xor = XORFilter(m, k)
+        for x in inserted:
+            xor.insert(x)
+        xor_fps = sum(xor.contains(x) for x in test_negative)
+        xor_fns = sum(not xor.contains(x) for x in test_positive)
+        xor_fp_rates.append(xor_fps / len(test_negative))
+        xor_fn_rates.append(xor_fns / len(test_positive))
+
+        # Vacuum filter baseline
+        vacuum = VacuumFilter(m, k)
+        for x in inserted:
+            vacuum.insert(x)
+        vacuum_fps = sum(vacuum.contains(x) for x in test_negative)
+        vacuum_fns = sum(not vacuum.contains(x) for x in test_positive)
+        vacuum_fp_rates.append(vacuum_fps / len(test_negative))
+        vacuum_fn_rates.append(vacuum_fns / len(test_positive))
     
     return {
         'qam_fp_mean': np.mean(qam_fp_rates),
@@ -117,6 +152,18 @@ def run_single_experiment(m, k, set_size, shots, noise_rate, theta=np.pi/4, n_tr
         'classical_fp_std': np.std(classical_fp_rates),
         'classical_fn_mean': np.mean(classical_fn_rates),
         'classical_fn_std': np.std(classical_fn_rates),
+        'cuckoo_fp_mean': np.mean(cuckoo_fp_rates),
+        'cuckoo_fp_std': np.std(cuckoo_fp_rates),
+        'cuckoo_fn_mean': np.mean(cuckoo_fn_rates),
+        'cuckoo_fn_std': np.std(cuckoo_fn_rates),
+        'xor_fp_mean': np.mean(xor_fp_rates),
+        'xor_fp_std': np.std(xor_fp_rates),
+        'xor_fn_mean': np.mean(xor_fn_rates),
+        'xor_fn_std': np.std(xor_fn_rates),
+        'vacuum_fp_mean': np.mean(vacuum_fp_rates),
+        'vacuum_fp_std': np.std(vacuum_fp_rates),
+        'vacuum_fn_mean': np.mean(vacuum_fn_rates),
+        'vacuum_fn_std': np.std(vacuum_fn_rates),
         'load_factor': set_size / m
     }
 
