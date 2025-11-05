@@ -3,26 +3,15 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Qiskit](https://img.shields.io/badge/Qiskit-1.0+-purple.svg)](https://qiskit.org/)
-[![Tests](https://img.shields.io/badge/tests-83%2F86%20passing-brightgreen.svg)](./sim/)
 
-**Field-founding research introducing a unified framework for quantum probabilistic data structures with 7 novel constructions, universal lower bounds, and comprehensive NISQ implementation.**
+Research project introducing a unified framework for quantum probabilistic data structures with 7 novel constructions, universal lower bounds, and NISQ implementation.
 
----
-
-## 📜 Paper Status
-
-**✅ Complete and Ready for Submission**
-
-- **Title**: "Amplitude Sketching: A Unified Framework for Quantum Probabilistic Data Structures"
-- **Author**: Konstantin Krasovitskiy (University of Cyprus)
-- **Status**: Conference paper complete (608 lines LaTeX)
-- **Novelty**: Literature search (200+ papers, 2015-2025) confirms **zero competition**
-- **Git Timestamp**: November 5, 2025 (commit `f863dcd`)
-- **Next Step**: Submit to arXiv and QIP/TQC 2026
+**Author**: Konstantin Krasovitskiy (University of Cyprus)  
+**Status**: In preparation for submission
 
 ---
 
-## 🎯 What is Amplitude Sketching?
+## Overview
 
 **Amplitude Sketching** is a unified theoretical framework for quantum probabilistic data structures that leverages **quantum interference** and **phase accumulation** to solve membership queries, similarity search, cardinality estimation, and frequency tracking problems.
 
@@ -33,7 +22,7 @@
 
 ---
 
-## 🏗️ Seven Novel Quantum Data Structures
+## Quantum Data Structures
 
 | Structure | Problem | Performance | Classical Baseline |
 |-----------|---------|-------------|-------------------|
@@ -47,9 +36,9 @@
 
 ---
 
-## 🧮 Theoretical Contributions
+## Theoretical Results
 
-### Four Main Theorems:
+Main theorems:
 
 1. **Universal Memory Lower Bound**:  
    m ≥ Ω(log(1/α)/(1-ckε))
@@ -66,7 +55,7 @@
 
 ---
 
-## 📊 Implementation Status
+## Implementation
 
 - **Test Coverage**: 96.5% (83/86 tests passing)
 - **Lines of Code**: ~2,100 lines eliminated via unified base class
@@ -76,7 +65,7 @@
 
 ---
 
-## 🚀 Quick Start
+## Getting Started
 
 ### Installation
 
@@ -126,7 +115,7 @@ print(f"Membership probability: {result['acceptance']:.3f}")
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 qds/
@@ -175,7 +164,7 @@ qds/
 
 ---
 
-## 🔬 Reproduce Results
+## Experiments
 
 ### Generate All Figures
 
@@ -206,13 +195,9 @@ python experiments/sweeps.py --q-subsketch    # Q-SubSketch AUC
 
 ---
 
-## 📖 Documentation
+## Documentation
 
-### Core Documentation
-- **[COMPETITIVE_ANALYSIS.md](./COMPETITIVE_ANALYSIS.md)**: Literature review (200+ papers, no competition found)
-- **[ROADMAP_INDEX.md](./ROADMAP_INDEX.md)**: Master index of all project phases
-
-### Theory Documentation (./theory/)
+### Theory (./theory/)
 - `amplitude_sketching_framework.md`: Framework definition
 - `qam_bound.md`: QAM false-positive analysis
 - `general_bounds.md`: Universal lower bounds
@@ -221,35 +206,9 @@ python experiments/sweeps.py --q-subsketch    # Q-SubSketch AUC
 - `separation_theorems.md`: Quantum-classical separation
 - `cell_probe_model.md`: Cell probe analysis
 
-### Phase Roadmaps (./roadmap_phase*.md)
-- Phases 1-2: Foundation + strengthening ✅ COMPLETE
-- Phase 3: Novel QDS + lower bounds (QHT, Q-Count, Q-HH)
-- Phase 4: Generalized theory + LSH + KV-cache
-- Phases 5-14: Advanced topics (see ROADMAP_INDEX.md)
-
 ---
 
-## 🏆 Key Features
-
-### Novel Contributions
-- ✅ **First unified framework** for quantum data structures (7 structures vs 1 in prior work)
-- ✅ **Field-founding terminology**: "Amplitude Sketching" not in literature
-- ✅ **Universal lower bounds**: m ≥ Ω(log(1/α)/(1-ckε)) for entire class
-- ✅ **Composability theory**: Error propagation for chained structures
-- ✅ **Batch advantages**: √B variance reduction proven
-- ✅ **NISQ-optimized**: Shallow circuits, noise analysis, depth < 100
-- ✅ **Honest limitations**: Proven deletion impossibility, realistic timeline
-
-### Implementation Quality
-- ✅ **96.5% test coverage** (83/86 tests)
-- ✅ **Unified base class** (~2,100 lines eliminated)
-- ✅ **Classical baselines** for rigorous comparison
-- ✅ **Deterministic seeds** for reproducibility
-- ✅ **Comprehensive documentation**
-
----
-
-## 🎓 Citation
+## Citation
 
 If you use this work, please cite:
 
@@ -267,7 +226,7 @@ If you use this work, please cite:
 
 ---
 
-## 🔗 Related Work
+## Related Work
 
 Our work builds on and differs from:
 
@@ -288,7 +247,7 @@ Our work builds on and differs from:
 
 ---
 
-## 🛠️ Development
+## Development
 
 ### Requirements
 - Python 3.11+
@@ -297,9 +256,6 @@ Our work builds on and differs from:
 - SciPy 1.16+
 - pytest 8.4+
 - scikit-learn 1.7+ (for AUC computation)
-
-### Contributing
-This is a research project. Contributions welcome after paper publication.
 
 ### Testing
 ```bash
@@ -313,18 +269,7 @@ pytest sim/test_qam.py::test_qam_insert -v
 pytest sim/ -v --cov=sim --cov-report=html
 ```
 
----
-
-## 📅 Timeline
-
-- **Nov 5, 2025**: Git timestamp established (commit `f863dcd`)
-- **Nov 2025**: Submit to arXiv (URGENT - establish priority)
-- **Feb/Mar 2026**: Submit to QIP/TQC 2026
-- **2026-2027**: Extend to Phase 4-6 (Q-KV, retrieval systems)
-
----
-
-## 📧 Contact
+## Contact
 
 **Konstantin Krasovitskiy**  
 Department of Computer Science  
@@ -334,9 +279,7 @@ krasovitskiy.konstantin@ucy.ac.cy
 **Repository**: https://github.com/kkraso01/Q  
 **License**: MIT
 
----
-
-## ⚠️ Limitations & Future Work
+## Limitations & Future Work
 
 ### Known Limitations
 - **Deletion impossible**: Proven via phase cancellation (see theory/qam_deletion_limitations.md)
@@ -344,21 +287,8 @@ krasovitskiy.konstantin@ucy.ac.cy
 - **Hardware requirements**: ε ≤ 10⁻⁴, m ≥ 64 qubits (3-5 years)
 - **NISQ constraints**: Shallow circuits (depth < 100)
 
-### Future Work (Phases 3-14)
-- **Phase 3**: Quantum Hashed Trie, Q-Count, Q-HH (6-10 weeks)
-- **Phase 4**: Q-LSH improvements, Q-KV-cache, benchmark suite (6-10 weeks)
-- **Phase 5**: Amplitude Sketching DSL, foundational generalization (8+ weeks)
-- **Phase 6**: Full retrieval system (Q-SubSketch → Q-LSH → Q-HH → Q-KV)
-- **Phases 7-14**: Compiler optimizations, hardware models, survey paper
-
----
-
-## 🎉 Acknowledgments
-
-This work establishes quantum data structures as a coherent research area. Special thanks to the quantum computing and algorithms communities for foundational work on Grover search, amplitude amplification, and quantum information theory.
-
----
-
-**⭐ Star this repo if you find it useful!**
-
-**📢 Follow for updates on arXiv submission and conference acceptance.**
+### Future Directions
+- Additional quantum data structures (quantum hashed trie, heavy hitters)
+- Q-LSH improvements and KV-cache integration
+- Compiler optimizations for NISQ devices
+- Hardware-specific implementations
