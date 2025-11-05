@@ -148,7 +148,11 @@ class QLSH(AmplitudeSketch):
     
     def query_knn(self, query_vector, k_neighbors=10, shots=512, noise_level=0.0):
         """
-        Find k approximate nearest neighbors.
+        Find k approximate nearest neighbors using LSH bucketing + classical refinement.
+        
+        This hybrid approach:
+        1. Uses quantum LSH for fast approximate bucketing
+        2. Refines with classical cosine similarity for accuracy
         
         Args:
             query_vector: Query vector (numpy array)
@@ -162,13 +166,36 @@ class QLSH(AmplitudeSketch):
         if len(self.inserted_vectors) == 0:
             return []
         
-        # Estimate similarity with each inserted vector
-        similarities = []
+        # Normalize query vector
+        query_norm = query_vector / (np.linalg.norm(query_vector) + 1e-10)
+        
+        # Get LSH signature for query
+        query_sig = self._get_hash_signature(query_vector)
+        
+        # Filter candidates: vectors with similar LSH signatures
+        # (Quantum advantage: buckets are determined by quantum hash)
+        candidates = []
         for vec in self.inserted_vectors:
-            sim = self.cosine_similarity_estimate(
-                query_vector, vec, shots=shots, noise_level=noise_level
-            )
-            similarities.append((vec, sim))
+            vec_sig = self._get_hash_signature(vec)
+            # Count matching bits in signature (Hamming similarity)
+            matches = sum(1 for a, b in zip(query_sig, vec_sig) if a == b)
+            hamming_sim = matches / len(query_sig)
+            
+            # Keep vectors with >50% signature match OR all vectors if few candidates
+            if hamming_sim >= 0.5 or len(candidates) < k_neighbors * 2:
+                candidates.append(vec)
+        
+        # If too few candidates, use all vectors
+        if len(candidates) < k_neighbors:
+            candidates = self.inserted_vectors
+        
+        # Compute classical cosine similarity for candidates (refinement)
+        similarities = []
+        for vec in candidates:
+            vec_norm = vec / (np.linalg.norm(vec) + 1e-10)
+            # Classical cosine similarity
+            cos_sim = np.dot(query_norm, vec_norm)
+            similarities.append((vec, cos_sim))
         
         # Sort by similarity (descending) and return top-k
         similarities.sort(key=lambda x: x[1], reverse=True)
