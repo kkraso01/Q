@@ -35,10 +35,11 @@
 \title{Amplitude Sketching: A Unified Framework for Quantum Probabilistic Data Structures}
 
 \author{
-\IEEEauthorblockN{[Author Names]}
-\IEEEauthorblockA{\textit{[Affiliation]} \\
-[City, Country] \\
-[email@domain.com]}
+\IEEEauthorblockN{Konstantin Krasovitskiy}
+\IEEEauthorblockA{\textit{Department of Computer Science} \\
+\textit{University of Cyprus} \\
+Nicosia, Cyprus \\
+krasovitskiy.konstantin@ucy.ac.cy}
 }
 
 \maketitle
@@ -190,7 +191,9 @@ Our work bridges classical probabilistic data structures and quantum algorithms.
 
 \textbf{Quantum Hashing:} Quantum fingerprinting~\cite{buhrman2001} compresses $n$-bit strings to $O(\log n)$ qubits while preserving equality testing, but fingerprints cannot be copied (no-cloning), limiting reusability.
 
-\textbf{Previous Quantum Data Structures:} Several quantum Bloom filter proposals exist~\cite{yan2015,zeng2015}, typically using Grover search requiring $\sqrt{N}$ depth per query. Our work differs by: (1) unified framework, (2) practical NISQ implementation, (3) honest limitation assessment, (4) comprehensive validation.
+\textbf{Previous Quantum Data Structures:} Early quantum Bloom filter proposals~\cite{yan2015,zeng2015} used Grover search requiring $\sqrt{N}$ depth per query. Shi~\cite{shi2021} introduced a quantum Bloom filter supporting deletions via reversible operations, focusing on private set operations. Montanaro~\cite{montanaro2016} developed quantum algorithms for streaming frequency moments (F₀, F₂, F_∞), achieving quantum speedups for cardinality and heavy hitters in a multi-pass streaming model. Yuan and Carbin~\cite{yuan2022} presented Tower, a programming framework for exact quantum data structures (lists, stacks, queues) in superposition, ensuring reversibility and history-independence. Liu et al.~\cite{liu2024} proposed the Quantum B+ Tree for range queries, the first tree-based quantum structure. Littau et al.~\cite{littau2024} conceptualized Quantum Partitioned Databases using Grover search for multi-item retrieval.
+
+Our work differs fundamentally from these approaches: (1) \textbf{unified framework} spanning 7 structures vs. single-structure solutions, (2) \textbf{probabilistic sketches} vs. exact structures or streaming algorithms, (3) \textbf{composability theory} for chaining structures, (4) \textbf{NISQ-optimized} shallow circuits with noise analysis, (5) \textbf{batch advantage} proofs (√B variance reduction), (6) \textbf{comprehensive implementation} with 96.5\% test coverage, (7) \textbf{honest limitation assessment} including proven deletion impossibility.
 
 \subsection{Quantum Information Theory}
 
@@ -545,6 +548,21 @@ Y.~Shi, ``Quantum lower bounds for the collision and the element distinctness pr
 
 \bibitem{benatti2004}
 F.~Benatti et al., ``Quantum central limit theorem,'' \emph{Journal of Mathematical Physics}, vol. 45, pp. 1720--1735, 2004.
+
+\bibitem{shi2021}
+R.-H.~Shi, ``Quantum Bloom filter and its applications,'' \emph{IEEE Transactions on Quantum Engineering}, vol. 2, pp. 1--10, 2021.
+
+\bibitem{montanaro2016}
+A.~Montanaro, ``The quantum complexity of approximating the frequency moments,'' \emph{Quantum Information \& Computation}, vol. 16, no. 13-14, pp. 1169--1190, 2016.
+
+\bibitem{yuan2022}
+C.~Yuan and M.~Carbin, ``Tower: Data structures in quantum superposition,'' in \emph{Proc. ACM Programming Languages (OOPSLA)}, vol. 6, 2022, pp. 1--29.
+
+\bibitem{liu2024}
+H.~Liu et al., ``First tree-like quantum data structure: Quantum B+ tree,'' arXiv:2405.20416, 2024.
+
+\bibitem{littau2024}
+T.~Littau et al., ``Towards quantum data structures for enhanced database performance,'' in \emph{VLDB Workshop on Quantum Data Science and Management (QDSM)}, 2024.
 
 \end{thebibliography}
 
