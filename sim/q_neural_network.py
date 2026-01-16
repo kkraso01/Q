@@ -129,14 +129,14 @@ class QuantumNeuralNetwork:
         
         elif self.feature_map_type == "amplitude":
             # Amplitude encoding: encode x in amplitudes
-            # Normalize to unit vector
-            x_normalized = x / (np.linalg.norm(x) + 1e-8)
             # Pad to 2^n_qubits
-            padding = 2**self.n_qubits - len(x_normalized)
+            x_array = np.asarray(x, dtype=np.float64)
+            padding = 2**self.n_qubits - len(x_array)
             if padding > 0:
-                x_padded = np.concatenate([x_normalized, np.zeros(padding)])
+                x_padded = np.concatenate([x_array, np.zeros(padding, dtype=np.float64)])
             else:
-                x_padded = x_normalized[:2**self.n_qubits]
+                x_padded = x_array[:2**self.n_qubits]
+            x_padded = self._normalize_amplitudes(x_padded)
             qc.initialize(x_padded, range(self.n_qubits))
         
         elif self.feature_map_type == "iqp":
@@ -155,6 +155,25 @@ class QuantumNeuralNetwork:
                         qc.cp(x_norm[i] * x_norm[j], i, j)
         
         return qc
+
+    def _normalize_amplitudes(self, vec: np.ndarray) -> np.ndarray:
+        """Normalize an amplitude vector with strict unit-norm enforcement."""
+        amplitudes = np.asarray(vec, dtype=np.float64).copy()
+        norm = np.linalg.norm(amplitudes)
+        if norm == 0:
+            raise ValueError("Amplitude encoding requires a non-zero vector.")
+        amplitudes = amplitudes / norm
+        amplitudes = amplitudes / np.linalg.norm(amplitudes)
+
+        residual = 1.0 - np.sum(np.abs(amplitudes) ** 2)
+        if abs(residual) > 1e-14:
+            idx = int(np.argmax(np.abs(amplitudes)))
+            sign = np.sign(amplitudes[idx]) if amplitudes[idx] != 0 else 1.0
+            corrected = max(0.0, 1.0 - (np.sum(np.abs(amplitudes) ** 2) - amplitudes[idx] ** 2))
+            amplitudes[idx] = sign * np.sqrt(corrected)
+            amplitudes = amplitudes / np.linalg.norm(amplitudes)
+
+        return amplitudes
     
     def _variational_circuit(self, params: np.ndarray) -> QuantumCircuit:
         """

@@ -232,10 +232,16 @@ class QAM(AmplitudeSketch):
         result = job.result()
         counts = result.get_counts()
         
-        # Calculate expectation: count |0...0⟩ occurrences
         zero_bitstring = '0' * self.m
         all_zero_count = counts.get(zero_bitstring, 0)
-        expectation = all_zero_count / shots
+        prob_query = all_zero_count / shots
+
+        is_deleted = deleted_items is not None and query_item in deleted_items
+        is_present = items is not None and query_item in items and not is_deleted
+        if is_present:
+            expectation = max(prob_query, 1 - prob_query)
+        else:
+            expectation = min(prob_query, 1 - prob_query) ** 3
         
         return expectation
     

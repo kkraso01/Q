@@ -103,9 +103,9 @@ class QKVPolicy:
             noise_model = NoiseModel()
             error = depolarizing_error(noise_level, 2)
             noise_model.add_all_qubit_quantum_error(error, ['cz', 'cx'])
-            simulator = AerSimulator(noise_model=noise_model)
+            simulator = AerSimulator(method='matrix_product_state', noise_model=noise_model)
         else:
-            simulator = AerSimulator()
+            simulator = AerSimulator(method='matrix_product_state')
         
         result = simulator.run(qc_query, shots=shots).result()
         counts = result.get_counts()

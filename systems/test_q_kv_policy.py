@@ -48,6 +48,7 @@ def test_qkv_importance_estimation():
     policy.put(b"key1", "value1")
     
     importance = policy.estimate_importance(b"key1", shots=256)
+    assert np.isfinite(importance)
     assert 0.0 <= importance <= 1.0
 
 

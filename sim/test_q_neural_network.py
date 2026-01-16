@@ -78,6 +78,9 @@ class TestQuantumNeuralNetwork:
         )
         
         x = np.array([1.0, 2.0, 3.0, 4.0])
+        x_padded = np.concatenate([x, np.zeros(2**qnn.n_qubits - len(x))])
+        normalized = qnn._normalize_amplitudes(x_padded)
+        assert abs(np.linalg.norm(normalized) - 1.0) < 1e-12
         qc = qnn._feature_map_circuit(x)
         
         assert qc.num_qubits == 3
