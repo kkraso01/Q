@@ -7,6 +7,13 @@ Date: November 2025
 
 import pytest
 import numpy as np
+import pytest
+from sim.qiskit_compat import PRIMITIVES_AVAILABLE
+pytestmark = pytest.mark.skipif(
+    not PRIMITIVES_AVAILABLE,
+    reason="Qiskit primitives (Sampler/Estimator) unavailable in this environment."
+)
+
 from sim.q_neural_network import (
     QuantumNeuralNetwork,
     QuantumConvolutionalNetwork,

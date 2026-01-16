@@ -19,7 +19,7 @@ import numpy as np
 from typing import List, Tuple, Optional, Callable, Dict, Any
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.circuit import Parameter, ParameterVector
-from qiskit.primitives import Sampler, Estimator
+from sim.qiskit_compat import get_sampler, get_estimator, PRIMITIVES_AVAILABLE
 from qiskit.quantum_info import SparsePauliOp
 from qiskit_aer import AerSimulator
 from qiskit_aer.noise import NoiseModel, depolarizing_error
