@@ -69,7 +69,7 @@ class QRetrieval:
         self.noise_level = noise_level
         
         # Initialize components
-        self.subsketch = QSubSketch(m=m // 2, k=k)
+        self.subsketch = QSubSketch(m=m // 2, k=k, L=substring_length)
         self.lsh = QLSH(m=m, k=k, d=d)
         self.hh = QHH(m=m // 2, k=k)
         self.cache = QKVPolicy(m=m // 4, k=k, cache_size=cache_size)
@@ -154,7 +154,7 @@ class QRetrieval:
             match = False
             for i in range(len(query_text) - self.substring_length + 1):
                 substring = query_text[i:i+self.substring_length]
-                if self.subsketch.query(substring.encode(), shots=self.shots):
+                if self.subsketch.query(doc['text'], substring, shots=self.shots):
                     match = True
                     break
             if match:

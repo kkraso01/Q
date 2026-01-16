@@ -89,7 +89,8 @@ class QBatcher:
         for candidate_phase in candidate_phases:
             # Build overlap test circuit
             qc = QuantumCircuit(self.m)
-            
+
+            qc.h(range(self.m))
             # Prepare reference state with query phases
             for i in range(self.m):
                 qc.rz(query_phases[i], i)
@@ -97,8 +98,9 @@ class QBatcher:
             # Apply inverse candidate phases (for overlap test)
             for i in range(self.m):
                 qc.rz(-candidate_phase[i], i)
-            
+
             # Measure overlap via Z-expectation
+            qc.h(range(self.m))
             qc.measure_all()
             
             # Run with amortized shots

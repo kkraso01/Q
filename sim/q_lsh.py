@@ -120,7 +120,8 @@ class QLSH(AmplitudeSketch):
         indices2 = self._signature_to_indices(sig2)
         for idx in indices2:
             qc_overlap.rz(-self.theta, idx)  # Inverse rotation
-        
+
+        qc_overlap.h(range(self.m))
         qc_overlap.measure_all()
         
         # Simulate with memory-efficient method for large m

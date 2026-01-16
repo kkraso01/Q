@@ -7,6 +7,13 @@ Date: November 2025
 
 import pytest
 import numpy as np
+import pytest
+from sim.qiskit_compat import PRIMITIVES_AVAILABLE
+pytestmark = pytest.mark.skipif(
+    not PRIMITIVES_AVAILABLE,
+    reason="Qiskit primitives (Sampler/Estimator) unavailable in this environment."
+)
+
 from sim.q_neural_network import (
     QuantumNeuralNetwork,
     QuantumConvolutionalNetwork,
@@ -71,6 +78,9 @@ class TestQuantumNeuralNetwork:
         )
         
         x = np.array([1.0, 2.0, 3.0, 4.0])
+        x_padded = np.concatenate([x, np.zeros(2**qnn.n_qubits - len(x))])
+        normalized = qnn._normalize_amplitudes(x_padded)
+        assert abs(np.linalg.norm(normalized) - 1.0) < 1e-12
         qc = qnn._feature_map_circuit(x)
         
         assert qc.num_qubits == 3
